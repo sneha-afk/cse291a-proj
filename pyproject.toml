@@ -1,0 +1,7 @@
+[project]
+name = "cse291a"
+version = "0.1.0"
+description = "CSE 291A @ UCSD, Fall 2025"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
