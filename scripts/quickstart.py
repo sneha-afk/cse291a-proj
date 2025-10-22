@@ -29,6 +29,7 @@ QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 # Initialize the Qdrant client
 # Skip API key if running locally
 if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
+    print(QDRANT_URL) 
     client = QdrantClient(url=QDRANT_URL)
 else:
     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
@@ -103,6 +104,7 @@ def rag(question: str, n_points: int = 3) -> str:
                 'content': question.strip()
             },
         ])
+    # print(response.message)
 
     # Receive the chunks from the streaming reponse, print as they arrive
     for chunk in response:
