@@ -23,12 +23,12 @@ model_name = "BAAI/bge-small-en-v1.5"
 # Initialize the Qdrant client
 # Skip API key if running locally
 if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
-    print(QDRANT_URL) 
+    print(QDRANT_URL)
     client = QdrantClient(url=QDRANT_URL)
 else:
     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
-question = "What's the difference between Meta and Microsoft in performance"
+question = "How does Tesla evaluate its energy segment growth and what strategies are they working on to increase its profitability?"
 n_points = 10
 
 results = client.query_points(
@@ -36,6 +36,5 @@ results = client.query_points(
         query=models.Document(text=question, model=model_name),
         limit=n_points,
     )
-context = "\n".join(f"Relevant Document {i}, {r.payload["document"]}: {r.payload["content"]}" for i, r in enumerate(results.points))
-docs = "\n".join(f"Relevant Document {i}, {r.payload["document"]}" for i, r in enumerate(results.points))
+docs = "\n".join(f"Relevant Document {i}, {r.payload["document"]}, chunk index {r.payload["part_index"]}" for i, r in enumerate(results.points))
 print(docs)

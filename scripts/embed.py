@@ -19,7 +19,7 @@ QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 # Initialize the Qdrant client
 # Skip API key if running locally
 if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
-    print(QDRANT_URL) 
+    print(QDRANT_URL)
     client = QdrantClient(url=QDRANT_URL, timeout=60)
 else:
     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
@@ -31,7 +31,7 @@ collection_name = "knowledge_base"
 model_name = "BAAI/bge-small-en-v1.5"
 
 #WARNING DELETE
-client.delete_collection(collection_name=collection_name)
+# client.delete_collection(collection_name=collection_name)
 
 # Check if collection exists
 collections = [col.name for col in client.get_collections().collections]
@@ -93,17 +93,18 @@ def points_for_file(path: Path):
             },
         )
 
+    print(f"\tPROCESSED: {path.name}")
+
 # Iterate files lazily, build points lazily, upsert in batches
 def all_points():
     # Define the folder path
     folder = Path("dataset")
-    for file_path in folder.rglob("*AMZN_2020.txt"):
-        yield from points_for_file(file_path)
-    for file_path in folder.rglob("*AMZN_2021.txt"):
+    # for file_path in folder.rglob("*MSFT*.txt"):
+    #     yield from points_for_file(file_path)
+    # for file_path in folder.rglob("*GOOGL*.txt"):
+    #     yield from points_for_file(file_path)
+    for file_path in folder.rglob("*TSLA*.txt"):
         yield from points_for_file(file_path)
 
 for batch in batched(all_points(), BATCH_SIZE):
     client.upsert(collection_name=collection_name, points=batch, wait=True)
-
-
-
