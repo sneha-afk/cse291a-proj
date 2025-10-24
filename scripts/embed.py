@@ -4,6 +4,7 @@ Sets up embeddings in Qdrant
 from uuid import uuid4
 from dotenv import load_dotenv
 import os
+import re
 from qdrant_client import QdrantClient, models
 from pathlib import Path
 from ollama import chat
@@ -31,7 +32,7 @@ collection_name = "knowledge_base"
 model_name = "BAAI/bge-small-en-v1.5"
 
 #WARNING DELETE
-# client.delete_collection(collection_name=collection_name)
+client.delete_collection(collection_name=collection_name)
 
 # Check if collection exists
 collections = [col.name for col in client.get_collections().collections]
@@ -58,7 +59,7 @@ else:
 
 
 CHUNK_SIZE = 1024         # chars per chunk
-BATCH_SIZE = 256          # points per upsert
+BATCH_SIZE = 128          # points per upsert
 
 
 def chunk_text(text: str, size: int):
@@ -81,6 +82,9 @@ def points_for_file(path: Path):
     with path.open("r", encoding="utf-8") as f:
         text = f.read()
 
+    # Regex to get the year out of the filename
+    year_match = re.search(r"\d{4}", path.stem)
+
     for part_idx, chunk in enumerate(chunk_text(text, CHUNK_SIZE)):
         yield models.PointStruct(
             id=str(uuid4()),  # unique per chunk
@@ -89,7 +93,7 @@ def points_for_file(path: Path):
                 "document": path.name,
                 "content": chunk,
                 "part_index": part_idx,
-                "year": 2022,
+                "year": year_match.group(0) if year_match else None,
             },
         )
 
@@ -99,11 +103,11 @@ def points_for_file(path: Path):
 def all_points():
     # Define the folder path
     folder = Path("dataset")
-    # for file_path in folder.rglob("*MSFT*.txt"):
+    # for file_path in folder.rglob("MSFT*.csv"):
     #     yield from points_for_file(file_path)
     # for file_path in folder.rglob("*GOOGL*.txt"):
     #     yield from points_for_file(file_path)
-    for file_path in folder.rglob("*TSLA*.txt"):
+    for file_path in folder.rglob("*MSFT_2024*.txt"):
         yield from points_for_file(file_path)
 
 for batch in batched(all_points(), BATCH_SIZE):
