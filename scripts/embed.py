@@ -85,6 +85,7 @@ def points_for_file(path: Path):
     # Regex to get the year out of the filename
     year_match = re.search(r"\d{4}", path.stem)
 
+    num_chunks = 0
     for part_idx, chunk in enumerate(chunk_text(text, CHUNK_SIZE)):
         yield models.PointStruct(
             id=str(uuid4()),  # unique per chunk
@@ -96,19 +97,21 @@ def points_for_file(path: Path):
                 "year": year_match.group(0) if year_match else None,
             },
         )
+        num_chunks += 1
 
-    print(f"\tPROCESSED: {path.name}")
+    print(f"\tPROCESSED: {path.name} -> {num_chunks} chunks generated")
 
 # Iterate files lazily, build points lazily, upsert in batches
 def all_points():
     # Define the folder path
     folder = Path("dataset")
-    # for file_path in folder.rglob("MSFT*.csv"):
-    #     yield from points_for_file(file_path)
+    for file_path in folder.rglob("MSFT*.csv"):
+        yield from points_for_file(file_path)
     # for file_path in folder.rglob("*GOOGL*.txt"):
     #     yield from points_for_file(file_path)
     for file_path in folder.rglob("*MSFT_2024*.txt"):
         yield from points_for_file(file_path)
 
+# wait blocks until the points are confirmed into the DB
 for batch in batched(all_points(), BATCH_SIZE):
-    client.upsert(collection_name=collection_name, points=batch, wait=True)
+    client.upsert(collection_name=collection_name, points=batch, wait=False)
