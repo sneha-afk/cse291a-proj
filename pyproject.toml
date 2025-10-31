@@ -5,6 +5,7 @@ description = "CSE 291A @ UCSD, Fall 2025"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "boto3>=1.40.64",
     "dotenv>=0.9.9",
     "ollama>=0.6.0",
     "pdfplumber>=0.11.7",

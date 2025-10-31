@@ -210,3 +210,5 @@ __marimo__/
 uv.lock
 
 qdrant_storage/
+
+.aws/
