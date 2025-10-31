@@ -36,7 +36,7 @@ aws configure
 
 **Make sure you set your region to `us-west-2` ONLY.**
 
-To check what models are available on this region:
+To check what models are available on this region: (The models that we can use are the ones' listed ON-DEMAND)
 ```bash
 aws bedrock list-foundation-models \
   --region us-west-2 \

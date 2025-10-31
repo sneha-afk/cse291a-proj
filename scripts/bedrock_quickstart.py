@@ -40,6 +40,5 @@ response = client.converse(
 print(f"Bedrock quickstart using: {model_id}")
 
 print(f"User: {prompt}")
-
 print("\n\nResponse:")
 print(response['output']['message']['content'][-1]['text'])
