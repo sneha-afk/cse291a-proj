@@ -2,34 +2,13 @@
 Sets up embeddings in Qdrant
 """
 from uuid import uuid4
-from dotenv import load_dotenv
-import os
 import re
 from qdrant_client import QdrantClient, models
 from pathlib import Path
-from ollama import chat
-from ollama import ChatResponse
+from our_utils import get_qdrant_client, get_qdrant_config
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Read Qdrant credentials
-QDRANT_URL = os.getenv("QDRANT_URL")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-
-# Initialize the Qdrant client
-# Skip API key if running locally
-if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
-    print(QDRANT_URL)
-    client = QdrantClient(url=QDRANT_URL, timeout=60)
-else:
-    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
-
-# Name of collection on Qdrant
-collection_name = "knowledge_base"
-
-# Embedding model being used
-model_name = "BAAI/bge-small-en-v1.5"
+collection_name, model_name = get_qdrant_config()
+client: QdrantClient = get_qdrant_client()
 
 #WARNING DELETE
 client.delete_collection(collection_name=collection_name)
@@ -87,7 +66,9 @@ def points_for_file(path: Path):
 
     file_ext = path.suffix
 
-    # Extra parsing for
+    # Extra parsing for csv files can be done here:
+    # if file_ext == "csv":
+    #     pass
 
     num_chunks = 0
     for part_idx, chunk in enumerate(chunk_text(text, CHUNK_SIZE)):

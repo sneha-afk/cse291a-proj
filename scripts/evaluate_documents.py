@@ -1,20 +1,8 @@
-import os
-from dotenv import load_dotenv
 from qdrant_client import QdrantClient
+from our_utils import get_qdrant_client, get_qdrant_config
 
-# Load environment variables
-load_dotenv()
-
-# Initialize Qdrant client
-QDRANT_URL = os.getenv("QDRANT_URL")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-
-if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
-    client = QdrantClient(url=QDRANT_URL, timeout=60)
-else:
-    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
-
-collection_name = "knowledge_base"
+collection_name, _ = get_qdrant_config()
+client: QdrantClient = get_qdrant_client()
 
 # Can dump in string directly from RAG script
 def parse_document_references(dump_string):
@@ -32,12 +20,11 @@ def parse_document_references(dump_string):
                 line = line[first_comma + 1:].strip()
 
         # Now parse "NASDAQ_GOOGL_2021.txt, chunk index 131"
-        parts = line.split(', chunk index ')
+        parts = line.split(', ')
         if len(parts) == 2:
             doc_name = parts[0].strip()
-            chunk_idx = int(parts[1].strip())
+            chunk_idx = int(parts[-1].split()[-1].strip())
             references.append((doc_name, chunk_idx))
-
     return references
 
 
@@ -135,7 +122,6 @@ def evaluate_retrieval(query, document_references):
 
     for i, (doc_name, chunk_idx) in enumerate(parsed_doc_refs):
         # doc_name, chunk_idx = parse_document_references(doc_ref)
-
         chunk = fetch_chunk(doc_name, chunk_idx)
         if chunk is None:
             print(f"\n[{i}/{len(document_references)}] WARNING: Could not find chunk")
@@ -182,21 +168,19 @@ def evaluate_retrieval(query, document_references):
 
 if __name__ == "__main__":
     # what was the question asked, doesn't have to be filled out
-    query = ""
+    query = "<question>"
 
     document_refs = """
-Relevant Document 0, NASDAQ_META_2024.txt, chunk index 1
-Relevant Document 1, NASDAQ_MSFT_2021.txt, chunk index 13
-Relevant Document 2, NASDAQ_MSFT_2022.txt, chunk index 7
-Relevant Document 3, NASDAQ_META_2023.txt, chunk index 264
-Relevant Document 4, NASDAQ_MSFT_2022.txt, chunk index 14
-Relevant Document 5, NASDAQ_MSFT_2023.txt, chunk index 12
-Relevant Document 6, NASDAQ_MSFT_2023.txt, chunk index 10
-Relevant Document 7, NASDAQ_META_2023.txt, chunk index 6
-Relevant Document 8, NASDAQ_META_2024.txt, chunk index 277
-Relevant Document 9, NASDAQ_MSFT_2023.txt, chunk index 5
-
-
-        """
+    Relevant Document 0, NASDAQ_MSFT_2024.txt, 3
+    Relevant Document 1, NASDAQ_MSFT_2023.txt, 3
+    Relevant Document 2, NASDAQ_MSFT_2021.txt, 94
+    Relevant Document 3, NASDAQ_MSFT_2022.txt, 91
+    Relevant Document 4, NASDAQ_MSFT_2021.txt, 3
+    Relevant Document 5, NASDAQ_MSFT_2022.txt, 78
+    Relevant Document 6, NASDAQ_MSFT_2023.txt, 93
+    Relevant Document 7, NASDAQ_MSFT_2024.txt, 84
+    Relevant Document 8, NASDAQ_MSFT_2021.txt, 74
+    Relevant Document 9, NASDAQ_MSFT_2022.txt, 79
+    """
 
     results = evaluate_retrieval(query, document_refs)

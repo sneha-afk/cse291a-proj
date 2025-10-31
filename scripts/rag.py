@@ -1,32 +1,13 @@
 """
 Generates response based on queries
 """
-from dotenv import load_dotenv
-import os
 from qdrant_client import QdrantClient, models
 from ollama import chat
 from ollama import ChatResponse
+from our_utils import get_qdrant_client, get_qdrant_config
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Read Qdrant credentials
-QDRANT_URL = os.getenv("QDRANT_URL")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-
-# Name of collection on Qdrant
-collection_name = "knowledge_base"
-
-# Embedding model being used
-model_name = "BAAI/bge-small-en-v1.5"
-
-# Initialize the Qdrant client
-# Skip API key if running locally
-if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
-    print(QDRANT_URL)
-    client = QdrantClient(url=QDRANT_URL)
-else:
-    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+collection_name, model_name = get_qdrant_config()
+client: QdrantClient = get_qdrant_client()
 
 def rag(question: str, n_points: int = 10):
     results = client.query_points(
