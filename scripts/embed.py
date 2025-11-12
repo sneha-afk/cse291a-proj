@@ -9,6 +9,7 @@ from qdrant_client import QdrantClient, models
 from pathlib import Path
 from ollama import chat
 from ollama import ChatResponse
+from chunking import chunk_by_pages
 
 # Load environment variables from .env file
 load_dotenv()
@@ -79,43 +80,32 @@ def batched(iterable, n: int):
 
 
 def points_for_file(path: Path):
-    with path.open("r", encoding="utf-8") as f:
-        text = f.read()
-
-    # Regex to get the year out of the filename
-    year_match = re.search(r"\d{4}", path.stem)
-
-    file_ext = path.suffix
-
-    # Extra parsing for
-
+    """
+    Geneate points per page
+    """
     num_chunks = 0
-    for part_idx, chunk in enumerate(chunk_text(text, CHUNK_SIZE)):
+    pages = chunk_by_pages(path)
+    for company, year, page_num, content in pages:
         yield models.PointStruct(
-            id=str(uuid4()),  # unique per chunk
-            vector=models.Document(text=chunk, model=model_name),
+            id=str(uuid4()),
+            vector=models.Document(text=content, model=model_name),
             payload={
                 "document": path.name,
-                "content": chunk,
-                "part_index": part_idx,
-                "year": year_match.group(0) if year_match else None,
+                "content": content,
+                "company": company,
+                "year": year,
+                "page_number": int(page_num),
+                "part_index": num_chunks,
             },
         )
         num_chunks += 1
-
     print(f"\tPROCESSED: {path.name} -> {num_chunks} chunks generated")
 
 # Iterate files lazily, build points lazily, upsert in batches
 def all_points():
     # Define the folder path
-    folder = Path("dataset")
-    for file_path in folder.rglob("*GOOGL*.txt"):
-        yield from points_for_file(file_path)
-    for file_path in folder.rglob("*MSFT*.txt"):
-        yield from points_for_file(file_path)
-    for file_path in folder.rglob("*TSLA*.txt"):
-        yield from points_for_file(file_path)
-    for file_path in folder.rglob("*META*.txt"):
+    folder = Path("../dataset")
+    for file_path in folder.rglob("*.txt"):
         yield from points_for_file(file_path)
 
 for batch in batched(all_points(), BATCH_SIZE):
