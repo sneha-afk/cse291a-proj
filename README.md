@@ -18,8 +18,17 @@ source ./.venv/bin/activate     # or ./.venv/Scripts/activate
 
 1. Start Qdrant: ensure Docker Desktop is running
 ```bash
+# Creates the storage folder in local filesystem
 docker run -p 6333:6333 -p 6334:6334 -v "$(pwd)/qdrant_storage:/qdrant/storage:z" qdrant/qdrant
 ```
+
+To instead use a Docker volume (in case local storage corrupts) to persist:
+```bash
+docker volume create qdrant_storage
+# Removing the $(pwd) so it uses the Docker volume
+docker run -d -p 6333:6333 -p 6334:6334 -v "qdrant_storage:/qdrant/storage:z" qdrant/qdrant
+```
+
 2. Start [Ollama](https://ollama.com/) with `gpt-oss:20b`
 3. Generate embeddings with `embed.py` to generate embeddings: run from root of this repo
 4. Run rag with`rag.py` with `rag("<Question>")`
