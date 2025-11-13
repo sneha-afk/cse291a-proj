@@ -1,13 +1,12 @@
 '''
-pdf_line_extractor.py - Extract text from PDF using pdfplumber line extraction
+plumber_pdf_to_txt.py - Extract text from PDF using pdfplumber line extraction
 
 Usage:
-    python pdf_line_extractor.py input.pdf output.txt
-    python pdf_line_extractor.py input.pdf output.txt --pages 1-5,10,15-20
+    python plumber_pdf_to_txt.py input.pdf output.txt
+    python plumber_pdf_to_txt.py input.pdf output.txt --pages 1-5,10,15-20
 '''
 
 import pdfplumber
-import sys
 import argparse
 
 # Parse out the ranges and make it a set of pages to read through

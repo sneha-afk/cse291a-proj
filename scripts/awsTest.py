@@ -1,7 +1,7 @@
 import boto3, botocore
 import os
 
-# Set the API key as an environment variable
+# Set the API key as environment keys OR using aws configure
 # Create the Bedrock client
 
 client = boto3.client(

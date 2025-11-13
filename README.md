@@ -17,8 +17,9 @@ source ./.venv/bin/activate     # or ./.venv/Scripts/activate
 ### Running locally
 
 1. Start Qdrant: ensure Docker Desktop is running
+
+To create the storage folder in the local filesystem (i.e, PWD):
 ```bash
-# Creates the storage folder in local filesystem
 docker run -p 6333:6333 -p 6334:6334 -v "$(pwd)/qdrant_storage:/qdrant/storage:z" qdrant/qdrant
 ```
 
@@ -31,7 +32,7 @@ docker run -d -p 6333:6333 -p 6334:6334 -v "qdrant_storage:/qdrant/storage:z" qd
 
 2. Start [Ollama](https://ollama.com/) with `gpt-oss:20b`
 3. Generate embeddings with `embed.py` to generate embeddings: run from root of this repo
-4. Generate embeddings with `'embed_csv.py` to generate embeddings: run from root of this repo
+4. Generate embeddings with `embed_csv.py` to generate embeddings: run from root of this repo
 5. Run rag with`rag_local.py` with `rag("<Question>")` or `rag_aws` for AWS run
 
 
@@ -39,6 +40,23 @@ To test retrieval only use `retrieval.py`
 
 ### Running AWS Bedrock
 See [`boto3` documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) (Python client for Bedrock).
+
+Ensure AWS CLI is installed: see [aws/README.md](./aws/README.md) for manual installation on Linux:
+```bash
+# Windows via winget
+winget install Amazon.AWSCLI
+```
+
+```bash
+# macOS via brew
+brew install awscli
+```
+
+```bash
+# Linux, globally via pip if preferred
+# Can add --user for just your user
+sudo python -m pip install awscli
+```
 
 Generate API keys from the login page. You can set these as environment variables, or:
 ```bash
