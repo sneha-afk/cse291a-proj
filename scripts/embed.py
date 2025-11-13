@@ -12,6 +12,13 @@ from ollama import ChatResponse
 from chunking import chunk_by_pages
 
 
+'''
+IMPORTANT:
+
+Just run embed.py when trying new chunking strategy as stored in cloud
+
+'''
+
 # Load environment variables from .env file
 load_dotenv()
 
