@@ -150,26 +150,12 @@ def points_for_csv_file(path: Path, company: str):
 
     print(f"\tPROCESSED: {path.name} -> {num_chunks} chunks generated")
 
-
-# Iterate files lazily, build points lazily, upsert in batches
-# def all_points():
-#     # Define the folder path
-#     folder = Path("dataset")
-#     for file_path in folder.rglob("proc_GOOGL*.csv"):
-#         yield from points_for_csv_file(file_path, "GOOGL")
-#     for file_path in folder.rglob("proc_MSFT*.csv"):
-#         yield from points_for_csv_file(file_path, "MSFT")
-#     for file_path in folder.rglob("proc_TSLA*.csv"):
-#         yield from points_for_csv_file(file_path, "TSLA")
-#     for file_path in folder.rglob("proc_META*.csv"):
-#         yield from points_for_csv_file(file_path, "META")
-
 def all_points():
     # Define the folder path
     folder = Path("dataset")
     for file_path in folder.rglob("proc_*.csv"):
         filename = file_path.stem 
-        ticker = filename.replace("proc_", "").split('_')[0]
+        ticker = filename.replace("proc_", "").split('-')[0]
         yield from points_for_csv_file(file_path, ticker)
 
 for batch in batched(all_points(), BATCH_SIZE):
