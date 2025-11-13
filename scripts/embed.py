@@ -103,8 +103,8 @@ def points_for_file(path: Path):
 
 # Iterate files lazily, build points lazily, upsert in batches
 def all_points():
-    # Define the folder path
-    folder = Path("../dataset")
+    # Define the folder path: run this script from the root of the repo
+    folder = Path("dataset")
     for file_path in folder.rglob("*.txt"):
         yield from points_for_file(file_path)
 
