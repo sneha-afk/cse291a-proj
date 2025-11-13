@@ -19,6 +19,7 @@ system_message = (
     .with_conversation_start_date("2025-06-28")
 )
 
+
 developer_message = (
     DeveloperContent.new()
     .with_instructions("Always respond in riddles")
@@ -46,6 +47,7 @@ developer_message = (
         ]
     )
 )
+
 
 convo = Conversation.from_messages(
     [

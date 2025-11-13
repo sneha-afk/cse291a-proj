@@ -11,6 +11,7 @@ from ollama import chat
 from ollama import ChatResponse
 from chunking import chunk_by_pages
 
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -50,14 +51,12 @@ else:
     print(f"Collection '{collection_name}' already exists — skipping creation.")
 
 
-
 # # Loop through all .txt files in the folder
 # documents = []
 # for file_path in folder.rglob("*2022.txt"):
 #     with file_path.open("r", encoding="utf-8") as f:
 #         content = f.read()
 #         documents.append((file_path.name, content))
-
 
 CHUNK_SIZE = 1024         # chars per chunk
 BATCH_SIZE = 128          # points per upsert

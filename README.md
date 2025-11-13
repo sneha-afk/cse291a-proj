@@ -31,7 +31,9 @@ docker run -d -p 6333:6333 -p 6334:6334 -v "qdrant_storage:/qdrant/storage:z" qd
 
 2. Start [Ollama](https://ollama.com/) with `gpt-oss:20b`
 3. Generate embeddings with `embed.py` to generate embeddings: run from root of this repo
-4. Run rag with`rag.py` with `rag("<Question>")`
+4. Generate embeddings with `'embed_csv.py` to generate embeddings: run from root of this repo
+5. Run rag with`rag_local.py` with `rag("<Question>")` or `rag_aws` for AWS run
+
 
 To test retrieval only use `retrieval.py`
 
