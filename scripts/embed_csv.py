@@ -31,7 +31,7 @@ collection_name = "knowledge_base"
 model_name = "BAAI/bge-small-en-v1.5"
 
 #WARNING DELETE
-client.delete_collection(collection_name=collection_name)
+# client.delete_collection(collection_name=collection_name)
 
 # Check if collection exists
 collections = [col.name for col in client.get_collections().collections]
@@ -152,17 +152,25 @@ def points_for_csv_file(path: Path, company: str):
 
 
 # Iterate files lazily, build points lazily, upsert in batches
+# def all_points():
+#     # Define the folder path
+#     folder = Path("dataset")
+#     for file_path in folder.rglob("proc_GOOGL*.csv"):
+#         yield from points_for_csv_file(file_path, "GOOGL")
+#     for file_path in folder.rglob("proc_MSFT*.csv"):
+#         yield from points_for_csv_file(file_path, "MSFT")
+#     for file_path in folder.rglob("proc_TSLA*.csv"):
+#         yield from points_for_csv_file(file_path, "TSLA")
+#     for file_path in folder.rglob("proc_META*.csv"):
+#         yield from points_for_csv_file(file_path, "META")
+
 def all_points():
     # Define the folder path
     folder = Path("dataset")
-    for file_path in folder.rglob("proc_GOOGL*.csv"):
-        yield from points_for_csv_file(file_path, "GOOGL")
-    for file_path in folder.rglob("proc_MSFT*.csv"):
-        yield from points_for_csv_file(file_path, "MSFT")
-    for file_path in folder.rglob("proc_TSLA*.csv"):
-        yield from points_for_csv_file(file_path, "TSLA")
-    for file_path in folder.rglob("proc_META*.csv"):
-        yield from points_for_csv_file(file_path, "META")
+    for file_path in folder.rglob("proc_*.csv"):
+        filename = file_path.stem 
+        ticker = filename.replace("proc_", "").split('_')[0]
+        yield from points_for_csv_file(file_path, ticker)
 
 for batch in batched(all_points(), BATCH_SIZE):
     client.upsert(collection_name=collection_name, points=batch, wait=True)

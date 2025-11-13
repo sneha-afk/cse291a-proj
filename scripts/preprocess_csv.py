@@ -14,6 +14,8 @@ def convert_csv_dates_to_iso(input_folder: str = "dataset"):
     print(f"Found {len(csv_files)} CSV files to process")
     
     for csv_file in csv_files:
+        if csv_file.name.startswith("proc_"):
+            continue
         try:
             # Read the CSV file
             df = pd.read_csv(csv_file)
