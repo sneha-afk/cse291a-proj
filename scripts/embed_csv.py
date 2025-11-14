@@ -8,6 +8,7 @@ import re
 from qdrant_client import QdrantClient, models
 from pathlib import Path
 from datetime import datetime
+import pandas as pd
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,7 +32,7 @@ collection_name = "knowledge_base"
 model_name = "BAAI/bge-small-en-v1.5"
 
 #WARNING DELETE
-# client.delete_collection(collection_name=collection_name)
+client.delete_collection(collection_name=collection_name)
 
 # Check if collection exists
 collections = [col.name for col in client.get_collections().collections]
@@ -48,7 +49,7 @@ else:
     print(f"Collection '{collection_name}' already exists — skipping creation.")
 
 
-CHUNK_SIZE = 1           # rows per chunk (adjust as needed)
+CHUNK_SIZES = [1,10,30]           # rows per chunk (adjust as needed)
 BATCH_SIZE = 128          # points per upsert
 
 
@@ -131,24 +132,41 @@ def points_for_csv_file(path: Path, company: str):
     # Regex to get the year out of the filename (fallback)
     year_match = re.search(r"\d{4}", path.stem)
 
+    df = pd.DataFrame([row.split(',') for row in data_rows], columns=headers.split(','))    
+    if 'date' in headers:
+        df['date'] = pd.to_datetime(df['date'])
+
     num_chunks = 0
-    for part_idx, (chunk, month, year) in enumerate(chunk_csv_rows(data_rows, headers, company, CHUNK_SIZE)):
-        yield models.PointStruct(
-            id=str(uuid4()),  # unique per chunk
-            vector=models.Document(text=chunk, model=model_name),
-            payload={
-                "document": path.name,
-                "content": chunk,
-                "part_index": part_idx,
-                "company": company,
-                "month": month,
-                "year": year if year else (year_match.group(0) if year_match else None),
-                "headers": headers,  # Store original headers separately if needed
-            },
-        )
-        num_chunks += 1
+    for chunk_size in CHUNK_SIZES:
+        for part_idx, (chunk, month, year) in enumerate(chunk_csv_rows(data_rows, headers, company, chunk_size)):
+            start_idx = part_idx * chunk_size
+            end_idx = min(start_idx + chunk_size, len(data_rows))
+            chunk_data_rows = data_rows[start_idx:end_idx]
+            
+            date_range = calculate_chunk_date_range(chunk_data_rows, headers)            
+            yield models.PointStruct(
+                id=str(uuid4()),  # unique per chunk
+                vector=models.Document(text=chunk, model=model_name),
+                payload={
+                    "document": path.name,
+                    "content": chunk,
+                    "part_index": part_idx,
+                    "company": company,
+                    "month": month,
+                    "year": year if year else (year_match.group(0) if year_match else None),
+                    "headers": headers, 
+                    "chunk_size": chunk_size,
+                    "date_range": date_range,
+                },
+            )
+            num_chunks += 1
 
     print(f"\tPROCESSED: {path.name} -> {num_chunks} chunks generated")
+
+def calculate_chunk_date_range(chunk_rows, headers):
+    """Calculate start and end dates for a chunk of CSV rows"""
+    
+    return {"start": chunk_rows[0][0:10], "end": chunk_rows[-1][0:10]}
 
 def all_points():
     # Define the folder path
