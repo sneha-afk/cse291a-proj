@@ -16,6 +16,7 @@ if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
     qdrant_client = QdrantClient(url=QDRANT_URL)
 else:
     qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+    
 
 REGION="us-west-2" # don't change this
 
@@ -29,6 +30,7 @@ def send_request(model: str, messages, print_prompt: bool = True) -> str:
         modelId=model,
         messages=messages,
     )
+
     print(f"Using model: {model}\n\n")
     if print_prompt:
         print(f"Input messages:")

@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 
+
 # Load environment variables
 load_dotenv()
 
@@ -182,7 +183,7 @@ def evaluate_retrieval(query, document_references):
 
 if __name__ == "__main__":
     # what was the question asked, doesn't have to be filled out
-    query = ""
+    query = "Give me the past two years of financial documents from Microsoft"
 
     document_refs = """
 Relevant Document 0, NASDAQ_META_2024.txt, chunk index 1

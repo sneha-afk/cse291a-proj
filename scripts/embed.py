@@ -90,6 +90,7 @@ def points_for_file(path: Path):
             vector=models.Document(text=content, model=model_name),
             payload={
                 "document": path.name,
+                "type": "pdf",
                 "content": content,
                 "company": company,
                 "year": year,

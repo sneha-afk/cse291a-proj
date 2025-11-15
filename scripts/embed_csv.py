@@ -139,6 +139,7 @@ def points_for_csv_file(path: Path, company: str):
             payload={
                 "document": path.name,
                 "content": chunk,
+                "type": "csv",
                 "part_index": part_idx,
                 "company": company,
                 "month": month,
