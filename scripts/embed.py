@@ -34,7 +34,9 @@ collection_name = "knowledge_base"
 model_name = "BAAI/bge-small-en-v1.5"
 
 #WARNING DELETE
-client.delete_collection(collection_name=collection_name)
+confirm = input("Delete the previous knowledge base? (CAREFUL!) [y/N] >> ").strip()
+if confirm.lower()[0] == "y":
+    client.delete_collection(collection_name=collection_name)
 
 # Check if collection exists
 collections = [col.name for col in client.get_collections().collections]

@@ -32,7 +32,9 @@ collection_name = "knowledge_base"
 model_name = "BAAI/bge-small-en-v1.5"
 
 #WARNING DELETE
-client.delete_collection(collection_name=collection_name)
+confirm = input("Delete the previous knowledge base? (CAREFUL!) [y/N] >> ").strip()
+if confirm.lower()[0] == "y":
+    client.delete_collection(collection_name=collection_name)
 
 # Check if collection exists
 collections = [col.name for col in client.get_collections().collections]
@@ -61,10 +63,10 @@ def extract_date_from_row(row: str):
     try:
         # Get the first column (date)
         date_str = row.split(',')[0].strip()
-        
+
         # Parse the date (YYYY-MM-DD format)
         date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-        
+
         # Return month name and year
         return date_obj.strftime('%B'), date_obj.year
     except Exception as e:
@@ -75,7 +77,7 @@ def extract_date_from_row(row: str):
 def chunk_csv_rows(rows: list, headers: str, company: str, size: int):
     """
     Chunks CSV rows and prepends headers with company, month, and year to each chunk.
-    
+
     Args:
         rows: List of CSV rows (as strings)
         headers: Header row string
@@ -84,16 +86,16 @@ def chunk_csv_rows(rows: list, headers: str, company: str, size: int):
     """
     for start in range(0, len(rows), size):
         chunk_rows = rows[start:start+size]
-        
+
         # Extract date from first row of this chunk
         month, year = extract_date_from_row(chunk_rows[0])
-        
+
         # Create enhanced header
         if month and year:
             enhanced_header = f"{headers}"
         else:
             enhanced_header = f"{headers}"
-        
+
         # Prepend enhanced headers to each chunk
         chunk_with_headers = enhanced_header + "\n" + "\n".join(chunk_rows)
         yield chunk_with_headers, month, year
@@ -114,17 +116,17 @@ def points_for_csv_file(path: Path, company: str):
     with path.open("r", encoding="utf-8") as f:
         # Read all lines
         lines = f.readlines()
-    
+
     if not lines:
         print(f"\tSKIPPED: {path.name} (empty file)")
         return
-    
+
     # First line is headers
     headers = lines[0].strip()
-    
+
     # Rest are data rows
     data_rows = [line.strip() for line in lines[1:] if line.strip()]
-    
+
     if not data_rows:
         print(f"\tSKIPPED: {path.name} (no data rows)")
         return
@@ -132,7 +134,7 @@ def points_for_csv_file(path: Path, company: str):
     # Regex to get the year out of the filename (fallback)
     year_match = re.search(r"\d{4}", path.stem)
 
-    df = pd.DataFrame([row.split(',') for row in data_rows], columns=headers.split(','))    
+    df = pd.DataFrame([row.split(',') for row in data_rows], columns=headers.split(','))
     if 'date' in headers:
         df['date'] = pd.to_datetime(df['date'])
 
@@ -142,8 +144,8 @@ def points_for_csv_file(path: Path, company: str):
             start_idx = part_idx * chunk_size
             end_idx = min(start_idx + chunk_size, len(data_rows))
             chunk_data_rows = data_rows[start_idx:end_idx]
-            
-            date_range = calculate_chunk_date_range(chunk_data_rows, headers)            
+
+            date_range = calculate_chunk_date_range(chunk_data_rows, headers)
             yield models.PointStruct(
                 id=str(uuid4()),  # unique per chunk
                 vector=models.Document(text=chunk, model=model_name),
@@ -154,7 +156,7 @@ def points_for_csv_file(path: Path, company: str):
                     "company": company,
                     "month": month,
                     "year": year if year else (year_match.group(0) if year_match else None),
-                    "headers": headers, 
+                    "headers": headers,
                     "chunk_size": chunk_size,
                     "date_range": date_range,
                 },
@@ -165,14 +167,14 @@ def points_for_csv_file(path: Path, company: str):
 
 def calculate_chunk_date_range(chunk_rows, headers):
     """Calculate start and end dates for a chunk of CSV rows"""
-    
+
     return {"start": chunk_rows[0][0:10], "end": chunk_rows[-1][0:10]}
 
 def all_points():
     # Define the folder path
     folder = Path("dataset")
     for file_path in folder.rglob("proc_*.csv"):
-        filename = file_path.stem 
+        filename = file_path.stem
         ticker = filename.replace("proc_", "").split('-')[0]
         yield from points_for_csv_file(file_path, ticker)
 

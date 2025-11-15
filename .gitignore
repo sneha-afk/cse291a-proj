@@ -212,3 +212,4 @@ uv.lock
 qdrant_storage/
 
 .aws/
+*proc*.csv
