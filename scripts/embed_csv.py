@@ -154,6 +154,7 @@ def points_for_csv_file(path: Path, company: str):
                     "content": chunk,
                     "part_index": part_idx,
                     "company": company,
+                    "source_type": 'csv',
                     "month": month,
                     "year": year if year else (year_match.group(0) if year_match else None),
                     "headers": headers,

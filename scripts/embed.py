@@ -100,6 +100,7 @@ def points_for_file(path: Path):
             payload={
                 "document": path.name,
                 "content": content,
+                "source_type": 'pdf',
                 "company": company,
                 "year": year,
                 "page_number": int(page_num),
