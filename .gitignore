@@ -213,3 +213,6 @@ qdrant_storage/
 
 .aws/
 *proc*.csv
+
+# Temp files from opening the CSV in Excel have a ~ after
+*.csv~
