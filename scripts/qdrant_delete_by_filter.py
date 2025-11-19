@@ -28,6 +28,10 @@ model_name = "BAAI/bge-small-en-v1.5"
 
 # See documentation for filters:
 # https://qdrant.tech/documentation/concepts/filtering/
+# "source_type" is either "pdf" or "csv"
+# "company" is usually the uppercase stock symbol
+
+# Example: deleting csvs from ORCL
 delete_filter = rest.Filter(
     must=[
         rest.FieldCondition(
@@ -36,7 +40,7 @@ delete_filter = rest.Filter(
         ),
         rest.FieldCondition(
             key="source_type",
-            match=rest.MatchValue(value="CSV")
+            match=rest.MatchValue(value="csv")
         ),
     ]
 )
