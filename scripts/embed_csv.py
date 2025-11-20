@@ -57,7 +57,7 @@ else:
 
 CHUNK_STRATEGIES = [
     {"type": "time", "period": "daily"},    
-    {"type": "rows", "size": 10},
+    # {"type": "rows", "size": 10},
     {"type": "time", "period": "monthly"},   
     {"type": "file", "period": "yearly"}  
 ]
@@ -171,8 +171,9 @@ def chunk_by_time_period(df, headers, company, period_type):
                 chunk_rows.append(','.join(row_values))
             
             month = date.strftime('%B')
+            quarter = (date.month - 1) // 3 + 1
             year = date.year
-            chunks.append((chunk_rows, month, year, 'daily'))
+            chunks.append((chunk_rows, month, year, 'daily', f'Q{quarter}'))
     
     elif period_type == 'monthly':
         # Each month is its own chunk
@@ -190,7 +191,8 @@ def chunk_by_time_period(df, headers, company, period_type):
                 chunk_rows.append(','.join(row_values))
             
             month_name = datetime(year, month, 1).strftime('%B')
-            chunks.append((chunk_rows, month_name, year, 'monthly'))
+            quarter = (month - 1) // 3 + 1  # Calculate quarter (1-4)
+            chunks.append((chunk_rows, month_name, year, 'monthly', f'Q{quarter}'))
     
     elif period_type == 'yearly':
         # Each year is its own chunk
@@ -207,7 +209,7 @@ def chunk_by_time_period(df, headers, company, period_type):
                         row_values.append(str(row[col]))
                 chunk_rows.append(','.join(row_values))
             
-            chunks.append((chunk_rows, None, year, 'yearly'))
+            chunks.append((chunk_rows, None, year, 'yearly', None))
     
     return chunks
 
@@ -272,7 +274,7 @@ def points_for_csv_file(path: Path, company: str):
         if strategy["type"] == "time" and df['Date'] is not None and not df['Date'].isna().all():
             # Time-based chunking (day/month) within this yearly file
             time_chunks = chunk_by_time_period(df, headers, company, strategy["period"])
-            for chunk_rows, month, year, chunk_type in time_chunks:
+            for chunk_rows, month, year, chunk_type, quarter in time_chunks:
                 if not chunk_rows:
                     continue
                     
@@ -280,7 +282,7 @@ def points_for_csv_file(path: Path, company: str):
                 effective_year = file_year or year
                 
                 # Convert list of rows back to string format
-                chunk_content = headers + "\n" + "\n".join(chunk_rows)
+                chunk_content = company + "\n" + headers + "\n" + "\n".join(chunk_rows)
                 if STATS_ON:
                     statistics = calculate_chunk_statistics(chunk_rows, headers)
                 else:
@@ -296,11 +298,11 @@ def points_for_csv_file(path: Path, company: str):
                         "company": company,
                         "source_type": 'csv',
                         "month": month,
+                        "quarter": quarter,
                         "year": effective_year,
                         "file_year": file_year,
                         "headers": headers,
                         "chunk_type": chunk_type,
-                        "chunk_strategy": f"time_{strategy['period']}",
                         "date_range": date_range,
                         "statistics": statistics,
                     },
@@ -334,7 +336,6 @@ def points_for_csv_file(path: Path, company: str):
                         "file_year": file_year,
                         "headers": headers,
                         "chunk_type": chunk_type,
-                        "chunk_strategy": f"rows_{strategy['size']}",
                         "date_range": date_range,
                         "statistics": statistics,
                     },
@@ -362,8 +363,7 @@ def points_for_csv_file(path: Path, company: str):
                     "year": file_year,
                     "file_year": file_year,
                     "headers": headers,
-                    "chunk_type": 'yearly',
-                    "chunk_strategy": "file_yearly",
+                    "chunk_type": "yearly",
                     "date_range": date_range,
                     "statistics": statistics,
                 },
