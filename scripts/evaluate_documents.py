@@ -1,4 +1,12 @@
+"""
+Evaluate the documents that were fetched by one-by-one showing the chunks
+    and (subjectively) judging the relevancy of those documents.
+
+Paste which documents were fetched at the bottom of this file before running.
+"""
+
 import os
+import re
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 
@@ -20,23 +28,32 @@ collection_name = "knowledge_base"
 def parse_document_references(dump_string):
     references = []
 
-    for line in dump_string.strip().split('\n'):
+    # Capture the first filename ending in .txt or .csv
+    # Then find "chunk index <number>" anywhere after.
+    pattern = re.compile(
+        r"(?P<doc>[^\s,].*?\.(?:txt|csv))"     # filename
+        r".*?chunk index\s*(?P<idx>\d+)",      # chunk index
+        re.IGNORECASE
+    )
+
+    for line in dump_string.strip().split("\n"):
         line = line.strip()
         if not line:
             continue
 
-        # Remove the "Relevant Document N, " prefix
+        # Remove prefix like "Relevant Document N,"
         if line.startswith("Relevant Document"):
-            first_comma = line.find(',')
-            if first_comma != -1:
-                line = line[first_comma + 1:].strip()
+            _, rest = line.split(",", 1)
+            line = rest.strip()
 
-        # Now parse "NASDAQ_GOOGL_2021.txt, chunk index 131"
-        parts = line.split(', chunk index ')
-        if len(parts) == 2:
-            doc_name = parts[0].strip()
-            chunk_idx = int(parts[1].strip())
-            references.append((doc_name, chunk_idx))
+        m = pattern.search(line)
+        if not m:
+            continue
+
+        doc_name = m.group("doc").strip()
+        chunk_idx = int(m.group("idx"))
+
+        references.append((doc_name, chunk_idx))
 
     return references
 
@@ -185,17 +202,26 @@ if __name__ == "__main__":
     query = ""
 
     document_refs = """
-Relevant Document 0, NASDAQ_META_2024.txt, chunk index 1
-Relevant Document 1, NASDAQ_MSFT_2021.txt, chunk index 13
-Relevant Document 2, NASDAQ_MSFT_2022.txt, chunk index 7
-Relevant Document 3, NASDAQ_META_2023.txt, chunk index 264
-Relevant Document 4, NASDAQ_MSFT_2022.txt, chunk index 14
-Relevant Document 5, NASDAQ_MSFT_2023.txt, chunk index 12
-Relevant Document 6, NASDAQ_MSFT_2023.txt, chunk index 10
-Relevant Document 7, NASDAQ_META_2023.txt, chunk index 6
-Relevant Document 8, NASDAQ_META_2024.txt, chunk index 277
-Relevant Document 9, NASDAQ_MSFT_2023.txt, chunk index 5
-
+Relevant Document 0, proc_AVGO-2021.csv, chunk index 89, source_type=csv
+Relevant Document 1, proc_NVDA-2021.csv, chunk index 89, source_type=csv
+Relevant Document 2, proc_GOOGL-2021.csv, chunk index 89, source_type=csv
+Relevant Document 3, proc_ORCL-2021.csv, chunk index 153, source_type=csv
+Relevant Document 4, proc_AVGO-2021.csv, chunk index 155, source_type=csv
+Relevant Document 5, proc_AVGO-2021.csv, chunk index 215, source_type=csv
+Relevant Document 6, proc_TSM-2021.csv, chunk index 101, source_type=csv
+Relevant Document 7, proc_NVDA-2021.csv, chunk index 237, source_type=csv
+Relevant Document 8, proc_ORCL-2021.csv, chunk index 91, source_type=csv
+Relevant Document 9, proc_GOOGL-2021.csv, chunk index 95, source_type=csv
+Relevant Document 10, NASDAQ_AMZN_2023.txt, chunk index 21, source_type=pdf
+Relevant Document 11, NASDAQ_AMZN_2022.txt, chunk index 20, source_type=pdf
+Relevant Document 12, NASDAQ_AMZN_2024.txt, chunk index 21, source_type=pdf
+Relevant Document 13, NASDAQ_AVGO_2021.txt, chunk index 50, source_type=pdf
+Relevant Document 14, NASDAQ_AMZN_2022.txt, chunk index 27, source_type=pdf
+Relevant Document 15, NASDAQ_AMZN_2023.txt, chunk index 22, source_type=pdf
+Relevant Document 16, NASDAQ_AMZN_2021.txt, chunk index 27, source_type=pdf
+Relevant Document 17, NASDAQ_AMZN_2022.txt, chunk index 21, source_type=pdf
+Relevant Document 18, NASDAQ_AMZN_2020.txt, chunk index 10, source_type=pdf
+Relevant Document 19, NASDAQ_AMZN_2024.txt, chunk index 27, source_type=pdf
 
         """
 
