@@ -3,6 +3,7 @@ from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 import os
 from qdrant_client import QdrantClient, models
+import datetime
 
 load_dotenv()
 QDRANT_URL = os.getenv("QDRANT_URL")
@@ -46,7 +47,6 @@ def send_request(model: str, messages, print_prompt: bool = True) -> str:
         if "reasoningContent" in response["output"]["message"]["content"][-1].keys()
         else response["output"]["message"]["content"][-1]["text"]
     )
-    print(text)
     return text
 
 
@@ -61,7 +61,7 @@ for better retrieval over CSV stock data.
 The CSV files have headers like:
 - ticker, date, date_ts, open, high, low, close, volume, year, quarter
 
-Given a user query of: 
+Given a user query of:
 "Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
 
 Possible query:
@@ -110,7 +110,6 @@ Your task:
     print("Generated filters:")
     for f in qdrant_query["filters"]:
         print(f)
-
     return qdrant_query
 
 
@@ -191,8 +190,6 @@ def rag(question: str, n_points: int = 10):
     csv_query = rewrite_prompt_csv(question)
     pdf_query = rewrite_prompt_pdf(question)
 
-    print(qdrant_filter_from_dict(csv_query))
-
     # print("Must filters")
     # print(
     #     [
@@ -213,6 +210,15 @@ def rag(question: str, n_points: int = 10):
 
     all_points = []
 
+    def date_sort_key(point):
+        # Use strptime() to parse the string based on its format
+        # %d for day, %m for month, %Y for four-digit year
+
+        date_dict= point.payload.get("date_range", {'start': "2000-01-01"})
+        date_str= date_dict.get("start", "2000-01-01")
+
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
+
     # 2) Query Qdrant for CSV chunks
     try:
         csv_results = qdrant_client.query_points(
@@ -221,8 +227,11 @@ def rag(question: str, n_points: int = 10):
             limit=1000,
             query_filter=qdrant_filter_from_dict(csv_query),
         )
-        all_points.extend(csv_results.points)
-        print("CHUNK COUNTS: ", len(all_points))
+
+        # Sorting by date
+        # sorted_csv_results = sorted(csv_results.points, key = lambda point: point.payload.get("date_range.start", 0))
+        sorted_csv_results = sorted(csv_results.points, key = date_sort_key)
+        all_points.extend(sorted_csv_results)
     except Exception as e:
         print(f"[WARN] CSV query failed: {e}")
 
@@ -261,12 +270,13 @@ def rag(question: str, n_points: int = 10):
         content = payload.get("content", "")
         part_index = payload.get("part_index", "NA")
         source_type = payload.get("source_type", "unknown")
+        date_range = payload.get("date_range", "N/A")
 
         context_lines.append(
             f"[{source_type.upper()}] Relevant Document {i}, {doc_name}: {content}"
         )
         docs_lines.append(
-            f"Relevant Document {i}, {doc_name}, chunk index {part_index}, source_type={source_type}"
+            f"Relevant Document {i}, {doc_name}, chunk index {part_index}, source_type={source_type}, date range={date_range}"
         )
 
     context = "\n".join(context_lines)
@@ -299,4 +309,3 @@ if __name__ == "__main__":
         "How many strictly positive return weeks did Apple have in 2024?"
     )
     rag(original_prompt, n_points=10)
-
