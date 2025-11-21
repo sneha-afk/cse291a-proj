@@ -84,5 +84,5 @@ def rag(question: str, n_points: int = 10):
 
     _ = send_request(answer_model, messages, False)
 
-original_prompt: str = "Compare the year-end revenues for Google Search in the past two years and provide insight into what factors contribute to the figures."
+original_prompt: str = "Which of these companies had an overall profit over 2 weeks in jan 2023: Amazon, Meta, Broadcom, TSMC."
 rag(original_prompt, n_points=10)
