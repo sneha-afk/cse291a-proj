@@ -39,30 +39,66 @@ def send_request(model: str, messages, print_prompt: bool = True) -> str:
             # careful with quotes
             print(f"{msg_dict['role']}: {msg_dict['content'][0]['text']}")
     print("\n----\nResponse:")
-    text = response["output"]["message"]["content"][-1]["text"]
-    print(text)
+    print(response)
+    text = (
+        response["output"]["message"]["content"][-1]["reasoningContent"][
+            "reasoningText"
+        ]["text"]
+        if "reasoningContent" in response["output"]["message"]["content"][-1].keys()
+        else response["output"]["message"]["content"][-1]["text"]
+    )
     return text
 
 
 # ---------- CSV & PDF rewriters ----------
 
+
 def rewrite_prompt_csv(original_question: str) -> str:
     sys_prompt = """
-You are generating a dense-retrieval query for CSV stock data.
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over CSV stock data.
 
 The CSV files have headers like:
 - ticker, date, date_ts, open, high, low, close, volume, year, quarter
 
-Rewrite the user's question into a short keyword query that:
-- explicitly mentions tickers, years, and quarters
-- uses words like: ticker, date_ts, close price, performance, quarter
-- is a SINGLE line of plain text, no JSON, no punctuation except spaces and colons if helpful.
-
-Example output for:
+Given a user query of:
 "Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
 
 Possible query:
-"ticker:AAPL ticker:MSFT year:2023 quarter:Q2 close price performance comparison"
+"company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison"
+
+Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
+You're only given two metadata keys: company and date_range
+{
+    "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
+    "filters: [
+        {
+            "must": [
+                    {"key": "company", "match": {"value": "AAPL"}},
+                    {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                    {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+                ]
+        },
+        {
+            "must": [
+                {"key": "company", "match": {"value": "MSFT"}},
+                {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+            ]
+        }
+    ]
+}
+
+Reasoning: high
+
+
+Your task:
+- Read the user's question.
+- Infer the correct tickers, date ranges, and any other needed filters.
+- You will first rewrite the user query then add it to a given valid Python dict literal.
+- Return ONLY a valid JSON object in this exact qdrant query format.
+- Do NOT include backticks, explanations, or any surrounding text. Just a valid python dictionary.
+
 """
 
     messages = [
@@ -70,8 +106,11 @@ Possible query:
         {"role": "user", "content": [{"text": original_question.strip()}]},
     ]
 
-    return send_request(rewriter_model, messages)
-
+    qdrant_query = eval(send_request(rewriter_model, messages))
+    print("Generated filters:")
+    for f in qdrant_query["filters"]:
+        print(f)
+    return qdrant_query
 
 
 def rewrite_prompt_pdf(original_question: str) -> str:
@@ -99,6 +138,47 @@ Be concise. No explanations, just the optimized query text.
 
     return send_request(rewriter_model, messages)
 
+
+def qdrant_filter_from_dict(d: dict) -> models.Filter:
+    groups = d["filters"]  # list of {"must": [ ... ]}
+
+    should_filters: list[models.Filter] = []
+
+    for group in groups:
+        must_conditions: list[models.FieldCondition] = []
+
+        for cond in group["must"]:
+            key = cond["key"]
+
+            # Match condition
+            if "match" in cond:
+                must_conditions.append(
+                    models.FieldCondition(
+                        key=key,
+                        match=models.MatchValue(value=cond["match"]["value"]),
+                    )
+                )
+
+            # Range condition
+            if "range" in cond:
+                r = cond["range"]
+                must_conditions.append(
+                    models.FieldCondition(
+                        key=key,
+                        range=models.DatetimeRange(
+                            gte=r.get("gte"),
+                            lte=r.get("lte"),
+                            lt=r.get("lt"),
+                            gt=r.get("gt"),
+                        ),
+                    )
+                )
+
+        should_filters.append(models.Filter(must=must_conditions))
+
+    return models.Filter(should=should_filters)
+
+
 # ---------- RAG pipeline ---------
 # ----- -- ----          ---- -----
 # -------------          ----------
@@ -119,22 +199,42 @@ def rag(question: str, n_points: int = 10):
     csv_query = rewrite_prompt_csv(question)
     pdf_query = rewrite_prompt_pdf(question)
 
+    # print("Must filters")
+    # print(
+    #     [
+    #         {"value": f["must"]["match"]}
+    #         for f in csv_query["filters"]
+    #         if "must" in f.keys() f["must"]
+    #     ]
+    # )
+    #
+    # print("Range filters")
+    # print(
+    #     [
+    #         {"gte": f["must"]["range"]["gte"], "lt": f["must"]["range"]["lt"]}
+    #         for f in csv_query["filters"]
+    #         if "must" in f.keys() and "range" in f["range"].keys()
+    #     ]
+    # )
+
     all_points = []
+
+    def date_sort_key(point):
+        # Use strptime() to parse the string based on its format
+        # %d for day, %m for month, %Y for four-digit year
+
+        date_dict= point.payload.get("date_range", {'start': "2000-01-01"})
+        date_str= date_dict.get("start", "2000-01-01")
+
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
 
     # 2) Query Qdrant for CSV chunks
     try:
         csv_results = qdrant_client.query_points(
             collection_name=collection_name,
-            query=models.Document(text=csv_query, model=embedding_model_name),
-            limit=n_points,
-            query_filter=models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="source_type",
-                        match=models.MatchValue(value="csv"),
-                    )
-                ]
-            ),
+            query=models.Document(text=csv_query["query"], model=embedding_model_name),
+            limit=1000,
+            query_filter=qdrant_filter_from_dict(csv_query),
         )
 
         # Sorting by date
@@ -178,12 +278,13 @@ def rag(question: str, n_points: int = 10):
         content = payload.get("content", "")
         part_index = payload.get("part_index", "NA")
         source_type = payload.get("source_type", "unknown")
+        date_range = payload.get("date_range", "N/A")
 
         context_lines.append(
             f"[{source_type.upper()}] Relevant Document {i}, {doc_name}: {content}"
         )
         docs_lines.append(
-            f"Relevant Document {i}, {doc_name}, chunk index {part_index}, source_type={source_type}"
+            f"Relevant Document {i}, {doc_name}, chunk index {part_index}, source_type={source_type}, date range={date_range}"
         )
 
     context = "\n".join(context_lines)
@@ -191,9 +292,6 @@ def rag(question: str, n_points: int = 10):
 
     print("Retrieved the following docs:")
     print(docs)
-
-
-
 
     # 4) Ask the answer model with combined context
     metaprompt = f"""
@@ -216,7 +314,6 @@ Question:
 
 if __name__ == "__main__":
     original_prompt: str = (
-        "Compare the year-end revenues for Google Search in the past two years "
-        "and provide insight into what factors contribute to the figures."
+        "How many strictly positive return weeks did Apple have in 2024?"
     )
     rag(original_prompt, n_points=10)
