@@ -112,7 +112,14 @@ Your task:
         {"role": "user", "content": [{"text": original_question.strip()}]},
     ]
 
-    qdrant_query = eval(send_request(rewriter_model, messages))
+    # run in loop, eval err if something goes wrong
+    while True:
+        try:
+            qdrant_query = eval(send_request(rewriter_model, messages))
+            break
+        except:
+            continue
+
     # print("Generated filters:")
     # for f in qdrant_query["filters"]:
     #     print(f)
