@@ -184,6 +184,15 @@ def qdrant_filter_from_dict(d: dict) -> models.Filter:
 # -------------          ----------
 # ---------------------------------
 
+def date_sort_key(point):
+        # Use strptime() to parse the string based on its format
+        # %d for day, %m for month, %Y for four-digit year
+
+        date_dict= point.payload.get("date_range", {'start': "2000-01-01"})
+        date_str= date_dict.get("start", "2000-01-01")
+
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
+
 
 def rag(question: str, n_points: int = 10):
     # 1) Get two optimized queries: one for CSV data, one for PDF docs
@@ -229,7 +238,6 @@ def rag(question: str, n_points: int = 10):
         )
 
         # Sorting by date
-        # sorted_csv_results = sorted(csv_results.points, key = lambda point: point.payload.get("date_range.start", 0))
         sorted_csv_results = sorted(csv_results.points, key = date_sort_key)
         all_points.extend(sorted_csv_results)
     except Exception as e:

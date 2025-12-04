@@ -232,6 +232,8 @@ def batched(iterable, n: int):
     if batch:
         yield batch
 
+num_chunks = 0
+
 def points_for_csv_file(path: Path, company: str):
     with path.open("r", encoding="utf-8") as f:
         # Read all lines
@@ -267,9 +269,9 @@ def points_for_csv_file(path: Path, company: str):
     else:
         print(f"\tNo 'Date' column found in {path.name}. Available columns: {df.columns.tolist()}")
         df['Date'] = None
-
-    num_chunks = 0
     
+    global num_chunks
+    num_chunks_csv = 0
     for strategy in CHUNK_STRATEGIES:
         if strategy["type"] == "time" and df['Date'] is not None and not df['Date'].isna().all():
             # Time-based chunking (day/month) within this yearly file
@@ -295,6 +297,7 @@ def points_for_csv_file(path: Path, company: str):
                     payload={
                         "document": path.name,
                         "content": chunk_content,
+                        "part_index": num_chunks,
                         "company": company,
                         "source_type": 'csv',
                         "month": month,
@@ -308,6 +311,7 @@ def points_for_csv_file(path: Path, company: str):
                     },
                 )
                 num_chunks += 1
+                num_chunks_csv += 1
                 
         elif strategy["type"] == "rows":
             # Row-based chunking within this yearly file - use original string data
@@ -329,6 +333,7 @@ def points_for_csv_file(path: Path, company: str):
                     payload={
                         "document": path.name,
                         "content": chunk_content,
+                        "part_index": num_chunks,
                         "company": company,
                         "source_type": 'csv',
                         "month": month,
@@ -341,6 +346,7 @@ def points_for_csv_file(path: Path, company: str):
                     },
                 )
                 num_chunks += 1
+                num_chunks_csv += 1
 
         elif strategy["type"] == "file":
             # Entire file as one chunk (yearly summary) - use original string data
@@ -357,6 +363,7 @@ def points_for_csv_file(path: Path, company: str):
                 payload={
                     "document": path.name,
                     "content": chunk_content,
+                    "part_index": num_chunks,
                     "company": company,
                     "source_type": 'csv',
                     "month": None,
@@ -369,8 +376,9 @@ def points_for_csv_file(path: Path, company: str):
                 },
             )
             num_chunks += 1
+            num_chunks_csv += 1
 
-    print(f"\tPROCESSED: {path.name} -> {num_chunks} chunks generated")
+    print(f"\tPROCESSED: {path.name} -> {num_chunks_csv} chunks generated, {num_chunks} total")
 
 def calculate_chunk_date_range(chunk_rows, headers):
     """Calculate start and end dates for a chunk of CSV rows"""
