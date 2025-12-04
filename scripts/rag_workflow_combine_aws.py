@@ -30,6 +30,9 @@ def send_request(model: str, messages, print_prompt: bool = True) -> str:
     response = bedrock_client.converse(
         modelId=model,
         messages=messages,
+        inferenceConfig={
+            "maxTokens": 16384,
+        }
     )
 
     print(f"Using model: {model}\n\n")
@@ -39,7 +42,8 @@ def send_request(model: str, messages, print_prompt: bool = True) -> str:
             # careful with quotes
             print(f"{msg_dict['role']}: {msg_dict['content'][0]['text']}")
     print("\n----\nResponse:")
-    print(response)
+    print("Usage:", response["usage"])
+    print("Metrics:", response["metrics"])
     text = (
         response["output"]["message"]["content"][-1]["reasoningContent"][
             "reasoningText"
@@ -79,7 +83,7 @@ chunk_count is the number of business days within the date range for a given com
                     {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
                     {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
                 ],
-            "chunk_count": 81, 
+            "chunk_count": 81,
         },
         {
             "must": [
@@ -109,9 +113,9 @@ Your task:
     ]
 
     qdrant_query = eval(send_request(rewriter_model, messages))
-    print("Generated filters:")
-    for f in qdrant_query["filters"]:
-        print(f)
+    # print("Generated filters:")
+    # for f in qdrant_query["filters"]:
+    #     print(f)
     return qdrant_query
 
 
@@ -158,6 +162,12 @@ def qdrant_filter_from_dict(d: dict) -> models.Filter:
                     models.FieldCondition(
                         key=key,
                         match=models.MatchValue(value=cond["match"]["value"]),
+                    )
+                )
+                must_conditions.append(
+                    models.FieldCondition(
+                        key="chunk_type",
+                        match=models.MatchValue(value="daily")
                     )
                 )
 
