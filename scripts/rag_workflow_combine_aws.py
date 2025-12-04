@@ -69,6 +69,7 @@ Possible query:
 
 Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
 You're only given two metadata keys: company and date_range
+chunk_count is the number of business days within the date range for a given company
 {
     "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
     "filters: [
@@ -77,18 +78,19 @@ You're only given two metadata keys: company and date_range
                     {"key": "company", "match": {"value": "AAPL"}},
                     {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
                     {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
-                ]
+                ],
+            "chunk_count": 81, 
         },
         {
             "must": [
                 {"key": "company", "match": {"value": "MSFT"}},
                 {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
                 {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
-            ]
+            ],
+            "chunk_count": 81
         }
     ]
 }
-
 Reasoning: high
 
 
@@ -184,14 +186,15 @@ def qdrant_filter_from_dict(d: dict) -> models.Filter:
 # -------------          ----------
 # ---------------------------------
 
+
 def date_sort_key(point):
-        # Use strptime() to parse the string based on its format
-        # %d for day, %m for month, %Y for four-digit year
+    # Use strptime() to parse the string based on its format
+    # %d for day, %m for month, %Y for four-digit year
 
-        date_dict= point.payload.get("date_range", {'start': "2000-01-01"})
-        date_str= date_dict.get("start", "2000-01-01")
+    date_dict = point.payload.get("date_range", {"start": "2000-01-01"})
+    date_str = date_dict.get("start", "2000-01-01")
 
-        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
+    return datetime.datetime.strptime(date_str, "%Y-%m-%d")
 
 
 def rag(question: str, n_points: int = 10):
@@ -223,8 +226,8 @@ def rag(question: str, n_points: int = 10):
         # Use strptime() to parse the string based on its format
         # %d for day, %m for month, %Y for four-digit year
 
-        date_dict= point.payload.get("date_range", {'start': "2000-01-01"})
-        date_str= date_dict.get("start", "2000-01-01")
+        date_dict = point.payload.get("date_range", {"start": "2000-01-01"})
+        date_str = date_dict.get("start", "2000-01-01")
 
         return datetime.datetime.strptime(date_str, "%Y-%m-%d")
 
@@ -233,13 +236,14 @@ def rag(question: str, n_points: int = 10):
         csv_results = qdrant_client.query_points(
             collection_name=collection_name,
             query=models.Document(text=csv_query["query"], model=embedding_model_name),
-            limit=1000,
+            limit=sum([f["chunk_count"] for f in csv_query["filters"]]),
             query_filter=qdrant_filter_from_dict(csv_query),
         )
 
         # Sorting by date
-        sorted_csv_results = sorted(csv_results.points, key = date_sort_key)
+        sorted_csv_results = sorted(csv_results.points, key=date_sort_key)
         all_points.extend(sorted_csv_results)
+        print("CHUNK COUNTS: ", len(all_points))
     except Exception as e:
         print(f"[WARN] CSV query failed: {e}")
 
@@ -309,11 +313,11 @@ Question:
         {"role": "user", "content": [{"text": metaprompt}]},
     ]
 
-    _ = send_request(answer_model, messages, print_prompt=False)
+    return send_request(answer_model, messages, print_prompt=False)
 
 
 if __name__ == "__main__":
     original_prompt: str = (
         "How many strictly positive return weeks did Apple have in 2024?"
     )
-    rag(original_prompt, n_points=10)
+    print(rag(original_prompt, n_points=10))
