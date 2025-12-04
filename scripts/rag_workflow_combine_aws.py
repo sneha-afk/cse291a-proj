@@ -3,6 +3,7 @@ from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 import os
 from qdrant_client import QdrantClient, models
+import datetime
 
 load_dotenv()
 QDRANT_URL = os.getenv("QDRANT_URL")
@@ -99,9 +100,18 @@ Be concise. No explanations, just the optimized query text.
     return send_request(rewriter_model, messages)
 
 # ---------- RAG pipeline ---------
-# ----- -- ----          ---- ----- 
+# ----- -- ----          ---- -----
 # -------------          ----------
 # ---------------------------------
+
+def date_sort_key(point):
+        # Use strptime() to parse the string based on its format
+        # %d for day, %m for month, %Y for four-digit year
+
+        date_dict= point.payload.get("date_range", {'start': "2000-01-01"})
+        date_str= date_dict.get("start", "2000-01-01")
+
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
 
 
 def rag(question: str, n_points: int = 10):
@@ -126,7 +136,10 @@ def rag(question: str, n_points: int = 10):
                 ]
             ),
         )
-        all_points.extend(csv_results.points)
+
+        # Sorting by date
+        sorted_csv_results = sorted(csv_results.points, key = date_sort_key)
+        all_points.extend(sorted_csv_results)
     except Exception as e:
         print(f"[WARN] CSV query failed: {e}")
 
