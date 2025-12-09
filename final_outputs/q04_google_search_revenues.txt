@@ -1,0 +1,163 @@
+[INFO] Qdrant running at http://localhost:6333
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over CSV stock data.
+
+The CSV files have headers like:
+- ticker, date, date_ts, open, high, low, close, volume, year, quarter
+
+Given a user query of:
+"Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
+
+Possible query:
+"company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison"
+
+If you are unsure of the ticker symbol of a company, guess multiple possible symbols within an "any" match.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
+You're only given two metadata keys: company and date_range
+chunk_count is the number of business days within the date range for a given company
+{
+    "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
+    "filters: [
+        {
+            "must": [
+                    {"key": "company", "match": {"value": "AAPL"}},
+                    {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                    {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+                ],
+            "chunk_count": 81,
+        },
+        {
+            "must": [
+                {"key": "company", "match": {"value": "MSFT"}},
+                {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+            ],
+            "chunk_count": 81
+        }
+    ]
+}
+Reasoning: high
+
+
+Your task:
+- Read the user's question.
+- Infer the correct tickers, date ranges, and any other needed filters.
+- You will first rewrite the user query then add it to a given valid Python dict literal.
+- Return ONLY a valid JSON object in this exact qdrant query format.
+- Do NOT include backticks, explanations, or any surrounding text. Just a valid python dictionary.
+- If the prompt does not require financial data retrieval, (e.g. questions about company strategies,
+  products, or other non-fiscal topics), return an empty query with zero chunk count:
+{
+    "query": "<optimized query text>",
+    "filters": [],
+    "chunk_count": 0
+}
+
+
+user: Compare the year-end revenues for Google Search in the past two years and provide insight into what factors contribute to the figures.
+
+----
+Response:
+Usage: {'inputTokens': 669, 'outputTokens': 377, 'totalTokens': 1046}
+Metrics: {'latencyMs': 3353}
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over PDF financial reports such as 10-Ks, 10-Qs, and annual reports.
+
+Rewrite the user's question into a short, dense query that:
+- Mentions the company names, segments (e.g., "Google Search"), and years.
+- Targets sections like "Results of Operations", "Segment Results", "Revenue", and
+  commentary on growth, drivers, and profitability.
+- Uses phrases that are likely to appear in those reports, like
+  "year-over-year", "segment revenue", "results of operations", "management discussion".
+- Targets keywords relevant to the question and financial analysis.
+
+You may also use filters on the "company" (ticker symbol) and "year" keys if specific companies or years are mentioned.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+The company key is based of the stock ticker symbol, e.g., "AAPL" for Apple, "MSFT" for Microsoft, "GOOGL" for Google, etc.
+If you are unsure of the ticker symbol, guess multiple possible symbols.
+
+For example, given the user question, "What were key revenue figures for Amazon and Oracle in 2021.",
+a optimized query would be:
+{
+    "query": <optimized query text>,
+    "filters": [
+        {
+            "must": [
+                {"key": "year", "match": {"value": "2021"}},
+                {"key": "company", "match": {"any": ["AMZN", "ORCL"]}}
+            ]
+        }
+    ]
+}
+
+Be concise. No explanations, just the optimized query.
+
+user: Compare the year-end revenues for Google Search in the past two years and provide insight into what factors contribute to the figures.
+
+----
+Response:
+Usage: {'inputTokens': 464, 'outputTokens': 366, 'totalTokens': 830}
+Metrics: {'latencyMs': 2592}
+[WARN] CSV query failed: Unexpected Response: 422 (Unprocessable Entity)
+Raw response content:
+b'{"status":{"error":"Validation error in JSON body: [internal.limit: value 0 invalid, must be 1 or larger]"},"time":0.0}'
+Retrieved the following docs:
+Relevant Document 0, NASDAQ_GOOGL_2022.txt, chunk index 34, source_type=pdf, year=2022
+Relevant Document 1, NASDAQ_GOOGL_2023.txt, chunk index 24, source_type=pdf, year=2023
+Relevant Document 2, NASDAQ_GOOGL_2023.txt, chunk index 28, source_type=pdf, year=2023
+Relevant Document 3, NASDAQ_GOOGL_2022.txt, chunk index 24, source_type=pdf, year=2022
+Relevant Document 4, NASDAQ_GOOGL_2022.txt, chunk index 81, source_type=pdf, year=2022
+Relevant Document 5, NASDAQ_GOOGL_2023.txt, chunk index 22, source_type=pdf, year=2023
+Relevant Document 6, NASDAQ_GOOGL_2022.txt, chunk index 26, source_type=pdf, year=2022
+Relevant Document 7, NASDAQ_GOOGL_2023.txt, chunk index 55, source_type=pdf, year=2023
+Relevant Document 8, NASDAQ_GOOGL_2023.txt, chunk index 79, source_type=pdf, year=2023
+Relevant Document 9, NASDAQ_GOOGL_2023.txt, chunk index 3, source_type=pdf, year=2023
+Using model: openai.gpt-oss-120b-1:0
+
+
+
+----
+Response:
+Usage: {'inputTokens': 8626, 'outputTokens': 945, 'totalTokens': 9571}
+Metrics: {'latencyMs': 6062}
+**Google Search & Other – year‑end revenue**
+
+| Year (ended Dec 31) | Revenue (in $ millions) |
+|----------------------|--------------------------|
+| 2021 | **$148,951** |
+| 2022 | **$162,450** |
+
+*Source: disaggregated revenue tables in the 2023 Form 10‑K (Document 2 & Document 7).*
+
+### Comparison  
+
+- **Absolute change:** $162,450 − $148,951 = **$13,499 million** higher in 2022.  
+- **Percent change:** $13,499 / $148,951 ≈ **9.1 %** increase from 2021 to 2022.
+
+### Factors that drove the 2022 figure  
+
+1. **Higher search query volume & mobile usage** – The filing notes that “Google Search & other revenues increased $13.5 billion… driven by increases in search queries resulting from growth in user adoption and usage, primarily on mobile devices.”【Document 2†L1-L4】  
+2. **Stronger advertiser spending** – Growth in advertiser budgets contributed to the rise, as the same passage mentions “growth in advertiser spending.”【Document 2†L2-L4】  
+3. **Ad‑format and delivery improvements** – Enhancements to ad formats and delivery helped capture more revenue per query.  
+4. **Paid‑clicks growth** – Paid clicks rose **10 %** year‑over‑year (2021‑2022), expanding the traffic base that can be monetized.【Document 2†L31-L33】  
+5. **Cost‑per‑click pressure** – Although cost‑per‑click fell (‑1 %) due to device‑mix, geographic‑mix, and foreign‑exchange effects, the net effect of more clicks outweighed the lower price per click.【Document 2†L33-L35】  
+6. **Foreign‑currency impact** – The narrative flags “unfavorable effect of foreign currency exchange rates” that partially offset growth, implying the headline increase is even larger in constant‑currency terms.【Document 2†L5-L7】
+
+### Insight  
+
+The ~9 % rise in Google Search & other revenue reflects a **volume‑driven expansion**: more user searches (especially on mobile) generated a larger pool of paid clicks, and advertisers responded with higher spend and adoption of newer ad formats. Even though average price per click slipped slightly (cost‑per‑click fell) and foreign‑exchange headwinds trimmed the upside, the net effect was a **robust double‑digit growth** in the core search advertising business. This pattern aligns with Alphabet’s broader commentary that the continued shift to online, increasing mobile adoption, and improvements in ad products are the primary long‑term engines of search‑related revenue.

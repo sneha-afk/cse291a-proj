@@ -1,0 +1,463 @@
+[INFO] Qdrant running at http://localhost:6333
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over CSV stock data.
+
+The CSV files have headers like:
+- ticker, date, date_ts, open, high, low, close, volume, year, quarter
+
+Given a user query of:
+"Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
+
+Possible query:
+"company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison"
+
+If you are unsure of the ticker symbol of a company, guess multiple possible symbols within an "any" match.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
+You're only given two metadata keys: company and date_range
+chunk_count is the number of business days within the date range for a given company
+{
+    "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
+    "filters: [
+        {
+            "must": [
+                    {"key": "company", "match": {"value": "AAPL"}},
+                    {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                    {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+                ],
+            "chunk_count": 81,
+        },
+        {
+            "must": [
+                {"key": "company", "match": {"value": "MSFT"}},
+                {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+            ],
+            "chunk_count": 81
+        }
+    ]
+}
+Reasoning: high
+
+
+Your task:
+- Read the user's question.
+- Infer the correct tickers, date ranges, and any other needed filters.
+- You will first rewrite the user query then add it to a given valid Python dict literal.
+- Return ONLY a valid JSON object in this exact qdrant query format.
+- Do NOT include backticks, explanations, or any surrounding text. Just a valid python dictionary.
+- If the prompt does not require financial data retrieval, (e.g. questions about company strategies,
+  products, or other non-fiscal topics), return an empty query with zero chunk count:
+{
+    "query": "<optimized query text>",
+    "filters": [],
+    "chunk_count": 0
+}
+
+
+user: How many strictly positive return weeks did Apple have in 2024?
+
+----
+Response:
+Usage: {'inputTokens': 659, 'outputTokens': 1229, 'totalTokens': 1888}
+Metrics: {'latencyMs': 8682}
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over PDF financial reports such as 10-Ks, 10-Qs, and annual reports.
+
+Rewrite the user's question into a short, dense query that:
+- Mentions the company names, segments (e.g., "Google Search"), and years.
+- Targets sections like "Results of Operations", "Segment Results", "Revenue", and
+  commentary on growth, drivers, and profitability.
+- Uses phrases that are likely to appear in those reports, like
+  "year-over-year", "segment revenue", "results of operations", "management discussion".
+- Targets keywords relevant to the question and financial analysis.
+
+You may also use filters on the "company" (ticker symbol) and "year" keys if specific companies or years are mentioned.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+The company key is based of the stock ticker symbol, e.g., "AAPL" for Apple, "MSFT" for Microsoft, "GOOGL" for Google, etc.
+If you are unsure of the ticker symbol, guess multiple possible symbols.
+
+For example, given the user question, "What were key revenue figures for Amazon and Oracle in 2021.",
+a optimized query would be:
+{
+    "query": <optimized query text>,
+    "filters": [
+        {
+            "must": [
+                {"key": "year", "match": {"value": "2021"}},
+                {"key": "company", "match": {"any": ["AMZN", "ORCL"]}}
+            ]
+        }
+    ]
+}
+
+Be concise. No explanations, just the optimized query.
+
+user: How many strictly positive return weeks did Apple have in 2024?
+
+----
+Response:
+Usage: {'inputTokens': 454, 'outputTokens': 448, 'totalTokens': 902}
+Metrics: {'latencyMs': 3151}
+CSV CHUNK COUNTS:  252
+Retrieved the following docs:
+Relevant Document 0, proc_AAPL-2024.csv, chunk index 2173, source_type=csv, date range={'start': '2024-01-02', 'end': '2024-01-02'}
+Relevant Document 1, proc_AAPL-2024.csv, chunk index 2174, source_type=csv, date range={'start': '2024-01-03', 'end': '2024-01-03'}
+Relevant Document 2, proc_AAPL-2024.csv, chunk index 2175, source_type=csv, date range={'start': '2024-01-04', 'end': '2024-01-04'}
+Relevant Document 3, proc_AAPL-2024.csv, chunk index 2176, source_type=csv, date range={'start': '2024-01-05', 'end': '2024-01-05'}
+Relevant Document 4, proc_AAPL-2024.csv, chunk index 2177, source_type=csv, date range={'start': '2024-01-08', 'end': '2024-01-08'}
+Relevant Document 5, proc_AAPL-2024.csv, chunk index 2178, source_type=csv, date range={'start': '2024-01-09', 'end': '2024-01-09'}
+Relevant Document 6, proc_AAPL-2024.csv, chunk index 2179, source_type=csv, date range={'start': '2024-01-10', 'end': '2024-01-10'}
+Relevant Document 7, proc_AAPL-2024.csv, chunk index 2180, source_type=csv, date range={'start': '2024-01-11', 'end': '2024-01-11'}
+Relevant Document 8, proc_AAPL-2024.csv, chunk index 2181, source_type=csv, date range={'start': '2024-01-12', 'end': '2024-01-12'}
+Relevant Document 9, proc_AAPL-2024.csv, chunk index 2182, source_type=csv, date range={'start': '2024-01-16', 'end': '2024-01-16'}
+Relevant Document 10, proc_AAPL-2024.csv, chunk index 2183, source_type=csv, date range={'start': '2024-01-17', 'end': '2024-01-17'}
+Relevant Document 11, proc_AAPL-2024.csv, chunk index 2184, source_type=csv, date range={'start': '2024-01-18', 'end': '2024-01-18'}
+Relevant Document 12, proc_AAPL-2024.csv, chunk index 2185, source_type=csv, date range={'start': '2024-01-19', 'end': '2024-01-19'}
+Relevant Document 13, proc_AAPL-2024.csv, chunk index 2186, source_type=csv, date range={'start': '2024-01-22', 'end': '2024-01-22'}
+Relevant Document 14, proc_AAPL-2024.csv, chunk index 2187, source_type=csv, date range={'start': '2024-01-23', 'end': '2024-01-23'}
+Relevant Document 15, proc_AAPL-2024.csv, chunk index 2188, source_type=csv, date range={'start': '2024-01-24', 'end': '2024-01-24'}
+Relevant Document 16, proc_AAPL-2024.csv, chunk index 2189, source_type=csv, date range={'start': '2024-01-25', 'end': '2024-01-25'}
+Relevant Document 17, proc_AAPL-2024.csv, chunk index 2190, source_type=csv, date range={'start': '2024-01-26', 'end': '2024-01-26'}
+Relevant Document 18, proc_AAPL-2024.csv, chunk index 2191, source_type=csv, date range={'start': '2024-01-29', 'end': '2024-01-29'}
+Relevant Document 19, proc_AAPL-2024.csv, chunk index 2192, source_type=csv, date range={'start': '2024-01-30', 'end': '2024-01-30'}
+Relevant Document 20, proc_AAPL-2024.csv, chunk index 2193, source_type=csv, date range={'start': '2024-01-31', 'end': '2024-01-31'}
+Relevant Document 21, proc_AAPL-2024.csv, chunk index 2194, source_type=csv, date range={'start': '2024-02-01', 'end': '2024-02-01'}
+Relevant Document 22, proc_AAPL-2024.csv, chunk index 2195, source_type=csv, date range={'start': '2024-02-02', 'end': '2024-02-02'}
+Relevant Document 23, proc_AAPL-2024.csv, chunk index 2196, source_type=csv, date range={'start': '2024-02-05', 'end': '2024-02-05'}
+Relevant Document 24, proc_AAPL-2024.csv, chunk index 2197, source_type=csv, date range={'start': '2024-02-06', 'end': '2024-02-06'}
+Relevant Document 25, proc_AAPL-2024.csv, chunk index 2198, source_type=csv, date range={'start': '2024-02-07', 'end': '2024-02-07'}
+Relevant Document 26, proc_AAPL-2024.csv, chunk index 2199, source_type=csv, date range={'start': '2024-02-08', 'end': '2024-02-08'}
+Relevant Document 27, proc_AAPL-2024.csv, chunk index 2200, source_type=csv, date range={'start': '2024-02-09', 'end': '2024-02-09'}
+Relevant Document 28, proc_AAPL-2024.csv, chunk index 2201, source_type=csv, date range={'start': '2024-02-12', 'end': '2024-02-12'}
+Relevant Document 29, proc_AAPL-2024.csv, chunk index 2202, source_type=csv, date range={'start': '2024-02-13', 'end': '2024-02-13'}
+Relevant Document 30, proc_AAPL-2024.csv, chunk index 2203, source_type=csv, date range={'start': '2024-02-14', 'end': '2024-02-14'}
+Relevant Document 31, proc_AAPL-2024.csv, chunk index 2204, source_type=csv, date range={'start': '2024-02-15', 'end': '2024-02-15'}
+Relevant Document 32, proc_AAPL-2024.csv, chunk index 2205, source_type=csv, date range={'start': '2024-02-16', 'end': '2024-02-16'}
+Relevant Document 33, proc_AAPL-2024.csv, chunk index 2206, source_type=csv, date range={'start': '2024-02-20', 'end': '2024-02-20'}
+Relevant Document 34, proc_AAPL-2024.csv, chunk index 2207, source_type=csv, date range={'start': '2024-02-21', 'end': '2024-02-21'}
+Relevant Document 35, proc_AAPL-2024.csv, chunk index 2208, source_type=csv, date range={'start': '2024-02-22', 'end': '2024-02-22'}
+Relevant Document 36, proc_AAPL-2024.csv, chunk index 2209, source_type=csv, date range={'start': '2024-02-23', 'end': '2024-02-23'}
+Relevant Document 37, proc_AAPL-2024.csv, chunk index 2210, source_type=csv, date range={'start': '2024-02-26', 'end': '2024-02-26'}
+Relevant Document 38, proc_AAPL-2024.csv, chunk index 2211, source_type=csv, date range={'start': '2024-02-27', 'end': '2024-02-27'}
+Relevant Document 39, proc_AAPL-2024.csv, chunk index 2212, source_type=csv, date range={'start': '2024-02-28', 'end': '2024-02-28'}
+Relevant Document 40, proc_AAPL-2024.csv, chunk index 2213, source_type=csv, date range={'start': '2024-02-29', 'end': '2024-02-29'}
+Relevant Document 41, proc_AAPL-2024.csv, chunk index 2214, source_type=csv, date range={'start': '2024-03-01', 'end': '2024-03-01'}
+Relevant Document 42, proc_AAPL-2024.csv, chunk index 2215, source_type=csv, date range={'start': '2024-03-04', 'end': '2024-03-04'}
+Relevant Document 43, proc_AAPL-2024.csv, chunk index 2216, source_type=csv, date range={'start': '2024-03-05', 'end': '2024-03-05'}
+Relevant Document 44, proc_AAPL-2024.csv, chunk index 2217, source_type=csv, date range={'start': '2024-03-06', 'end': '2024-03-06'}
+Relevant Document 45, proc_AAPL-2024.csv, chunk index 2218, source_type=csv, date range={'start': '2024-03-07', 'end': '2024-03-07'}
+Relevant Document 46, proc_AAPL-2024.csv, chunk index 2219, source_type=csv, date range={'start': '2024-03-08', 'end': '2024-03-08'}
+Relevant Document 47, proc_AAPL-2024.csv, chunk index 2220, source_type=csv, date range={'start': '2024-03-11', 'end': '2024-03-11'}
+Relevant Document 48, proc_AAPL-2024.csv, chunk index 2221, source_type=csv, date range={'start': '2024-03-12', 'end': '2024-03-12'}
+Relevant Document 49, proc_AAPL-2024.csv, chunk index 2222, source_type=csv, date range={'start': '2024-03-13', 'end': '2024-03-13'}
+Relevant Document 50, proc_AAPL-2024.csv, chunk index 2223, source_type=csv, date range={'start': '2024-03-14', 'end': '2024-03-14'}
+Relevant Document 51, proc_AAPL-2024.csv, chunk index 2224, source_type=csv, date range={'start': '2024-03-15', 'end': '2024-03-15'}
+Relevant Document 52, proc_AAPL-2024.csv, chunk index 2225, source_type=csv, date range={'start': '2024-03-18', 'end': '2024-03-18'}
+Relevant Document 53, proc_AAPL-2024.csv, chunk index 2226, source_type=csv, date range={'start': '2024-03-19', 'end': '2024-03-19'}
+Relevant Document 54, proc_AAPL-2024.csv, chunk index 2227, source_type=csv, date range={'start': '2024-03-20', 'end': '2024-03-20'}
+Relevant Document 55, proc_AAPL-2024.csv, chunk index 2228, source_type=csv, date range={'start': '2024-03-21', 'end': '2024-03-21'}
+Relevant Document 56, proc_AAPL-2024.csv, chunk index 2229, source_type=csv, date range={'start': '2024-03-22', 'end': '2024-03-22'}
+Relevant Document 57, proc_AAPL-2024.csv, chunk index 2230, source_type=csv, date range={'start': '2024-03-25', 'end': '2024-03-25'}
+Relevant Document 58, proc_AAPL-2024.csv, chunk index 2231, source_type=csv, date range={'start': '2024-03-26', 'end': '2024-03-26'}
+Relevant Document 59, proc_AAPL-2024.csv, chunk index 2232, source_type=csv, date range={'start': '2024-03-27', 'end': '2024-03-27'}
+Relevant Document 60, proc_AAPL-2024.csv, chunk index 2233, source_type=csv, date range={'start': '2024-03-28', 'end': '2024-03-28'}
+Relevant Document 61, proc_AAPL-2024.csv, chunk index 2234, source_type=csv, date range={'start': '2024-04-01', 'end': '2024-04-01'}
+Relevant Document 62, proc_AAPL-2024.csv, chunk index 2235, source_type=csv, date range={'start': '2024-04-02', 'end': '2024-04-02'}
+Relevant Document 63, proc_AAPL-2024.csv, chunk index 2236, source_type=csv, date range={'start': '2024-04-03', 'end': '2024-04-03'}
+Relevant Document 64, proc_AAPL-2024.csv, chunk index 2237, source_type=csv, date range={'start': '2024-04-04', 'end': '2024-04-04'}
+Relevant Document 65, proc_AAPL-2024.csv, chunk index 2238, source_type=csv, date range={'start': '2024-04-05', 'end': '2024-04-05'}
+Relevant Document 66, proc_AAPL-2024.csv, chunk index 2239, source_type=csv, date range={'start': '2024-04-08', 'end': '2024-04-08'}
+Relevant Document 67, proc_AAPL-2024.csv, chunk index 2240, source_type=csv, date range={'start': '2024-04-09', 'end': '2024-04-09'}
+Relevant Document 68, proc_AAPL-2024.csv, chunk index 2241, source_type=csv, date range={'start': '2024-04-10', 'end': '2024-04-10'}
+Relevant Document 69, proc_AAPL-2024.csv, chunk index 2242, source_type=csv, date range={'start': '2024-04-11', 'end': '2024-04-11'}
+Relevant Document 70, proc_AAPL-2024.csv, chunk index 2243, source_type=csv, date range={'start': '2024-04-12', 'end': '2024-04-12'}
+Relevant Document 71, proc_AAPL-2024.csv, chunk index 2244, source_type=csv, date range={'start': '2024-04-15', 'end': '2024-04-15'}
+Relevant Document 72, proc_AAPL-2024.csv, chunk index 2245, source_type=csv, date range={'start': '2024-04-16', 'end': '2024-04-16'}
+Relevant Document 73, proc_AAPL-2024.csv, chunk index 2246, source_type=csv, date range={'start': '2024-04-17', 'end': '2024-04-17'}
+Relevant Document 74, proc_AAPL-2024.csv, chunk index 2247, source_type=csv, date range={'start': '2024-04-18', 'end': '2024-04-18'}
+Relevant Document 75, proc_AAPL-2024.csv, chunk index 2248, source_type=csv, date range={'start': '2024-04-19', 'end': '2024-04-19'}
+Relevant Document 76, proc_AAPL-2024.csv, chunk index 2249, source_type=csv, date range={'start': '2024-04-22', 'end': '2024-04-22'}
+Relevant Document 77, proc_AAPL-2024.csv, chunk index 2250, source_type=csv, date range={'start': '2024-04-23', 'end': '2024-04-23'}
+Relevant Document 78, proc_AAPL-2024.csv, chunk index 2251, source_type=csv, date range={'start': '2024-04-24', 'end': '2024-04-24'}
+Relevant Document 79, proc_AAPL-2024.csv, chunk index 2252, source_type=csv, date range={'start': '2024-04-25', 'end': '2024-04-25'}
+Relevant Document 80, proc_AAPL-2024.csv, chunk index 2253, source_type=csv, date range={'start': '2024-04-26', 'end': '2024-04-26'}
+Relevant Document 81, proc_AAPL-2024.csv, chunk index 2254, source_type=csv, date range={'start': '2024-04-29', 'end': '2024-04-29'}
+Relevant Document 82, proc_AAPL-2024.csv, chunk index 2255, source_type=csv, date range={'start': '2024-04-30', 'end': '2024-04-30'}
+Relevant Document 83, proc_AAPL-2024.csv, chunk index 2256, source_type=csv, date range={'start': '2024-05-01', 'end': '2024-05-01'}
+Relevant Document 84, proc_AAPL-2024.csv, chunk index 2257, source_type=csv, date range={'start': '2024-05-02', 'end': '2024-05-02'}
+Relevant Document 85, proc_AAPL-2024.csv, chunk index 2258, source_type=csv, date range={'start': '2024-05-03', 'end': '2024-05-03'}
+Relevant Document 86, proc_AAPL-2024.csv, chunk index 2259, source_type=csv, date range={'start': '2024-05-06', 'end': '2024-05-06'}
+Relevant Document 87, proc_AAPL-2024.csv, chunk index 2260, source_type=csv, date range={'start': '2024-05-07', 'end': '2024-05-07'}
+Relevant Document 88, proc_AAPL-2024.csv, chunk index 2261, source_type=csv, date range={'start': '2024-05-08', 'end': '2024-05-08'}
+Relevant Document 89, proc_AAPL-2024.csv, chunk index 2262, source_type=csv, date range={'start': '2024-05-09', 'end': '2024-05-09'}
+Relevant Document 90, proc_AAPL-2024.csv, chunk index 2263, source_type=csv, date range={'start': '2024-05-10', 'end': '2024-05-10'}
+Relevant Document 91, proc_AAPL-2024.csv, chunk index 2264, source_type=csv, date range={'start': '2024-05-13', 'end': '2024-05-13'}
+Relevant Document 92, proc_AAPL-2024.csv, chunk index 2265, source_type=csv, date range={'start': '2024-05-14', 'end': '2024-05-14'}
+Relevant Document 93, proc_AAPL-2024.csv, chunk index 2266, source_type=csv, date range={'start': '2024-05-15', 'end': '2024-05-15'}
+Relevant Document 94, proc_AAPL-2024.csv, chunk index 2267, source_type=csv, date range={'start': '2024-05-16', 'end': '2024-05-16'}
+Relevant Document 95, proc_AAPL-2024.csv, chunk index 2268, source_type=csv, date range={'start': '2024-05-17', 'end': '2024-05-17'}
+Relevant Document 96, proc_AAPL-2024.csv, chunk index 2269, source_type=csv, date range={'start': '2024-05-20', 'end': '2024-05-20'}
+Relevant Document 97, proc_AAPL-2024.csv, chunk index 2270, source_type=csv, date range={'start': '2024-05-21', 'end': '2024-05-21'}
+Relevant Document 98, proc_AAPL-2024.csv, chunk index 2271, source_type=csv, date range={'start': '2024-05-22', 'end': '2024-05-22'}
+Relevant Document 99, proc_AAPL-2024.csv, chunk index 2272, source_type=csv, date range={'start': '2024-05-23', 'end': '2024-05-23'}
+Relevant Document 100, proc_AAPL-2024.csv, chunk index 2273, source_type=csv, date range={'start': '2024-05-24', 'end': '2024-05-24'}
+Relevant Document 101, proc_AAPL-2024.csv, chunk index 2274, source_type=csv, date range={'start': '2024-05-28', 'end': '2024-05-28'}
+Relevant Document 102, proc_AAPL-2024.csv, chunk index 2275, source_type=csv, date range={'start': '2024-05-29', 'end': '2024-05-29'}
+Relevant Document 103, proc_AAPL-2024.csv, chunk index 2276, source_type=csv, date range={'start': '2024-05-30', 'end': '2024-05-30'}
+Relevant Document 104, proc_AAPL-2024.csv, chunk index 2277, source_type=csv, date range={'start': '2024-05-31', 'end': '2024-05-31'}
+Relevant Document 105, proc_AAPL-2024.csv, chunk index 2278, source_type=csv, date range={'start': '2024-06-03', 'end': '2024-06-03'}
+Relevant Document 106, proc_AAPL-2024.csv, chunk index 2279, source_type=csv, date range={'start': '2024-06-04', 'end': '2024-06-04'}
+Relevant Document 107, proc_AAPL-2024.csv, chunk index 2280, source_type=csv, date range={'start': '2024-06-05', 'end': '2024-06-05'}
+Relevant Document 108, proc_AAPL-2024.csv, chunk index 2281, source_type=csv, date range={'start': '2024-06-06', 'end': '2024-06-06'}
+Relevant Document 109, proc_AAPL-2024.csv, chunk index 2282, source_type=csv, date range={'start': '2024-06-07', 'end': '2024-06-07'}
+Relevant Document 110, proc_AAPL-2024.csv, chunk index 2283, source_type=csv, date range={'start': '2024-06-10', 'end': '2024-06-10'}
+Relevant Document 111, proc_AAPL-2024.csv, chunk index 2284, source_type=csv, date range={'start': '2024-06-11', 'end': '2024-06-11'}
+Relevant Document 112, proc_AAPL-2024.csv, chunk index 2285, source_type=csv, date range={'start': '2024-06-12', 'end': '2024-06-12'}
+Relevant Document 113, proc_AAPL-2024.csv, chunk index 2286, source_type=csv, date range={'start': '2024-06-13', 'end': '2024-06-13'}
+Relevant Document 114, proc_AAPL-2024.csv, chunk index 2287, source_type=csv, date range={'start': '2024-06-14', 'end': '2024-06-14'}
+Relevant Document 115, proc_AAPL-2024.csv, chunk index 2288, source_type=csv, date range={'start': '2024-06-17', 'end': '2024-06-17'}
+Relevant Document 116, proc_AAPL-2024.csv, chunk index 2289, source_type=csv, date range={'start': '2024-06-18', 'end': '2024-06-18'}
+Relevant Document 117, proc_AAPL-2024.csv, chunk index 2290, source_type=csv, date range={'start': '2024-06-20', 'end': '2024-06-20'}
+Relevant Document 118, proc_AAPL-2024.csv, chunk index 2291, source_type=csv, date range={'start': '2024-06-21', 'end': '2024-06-21'}
+Relevant Document 119, proc_AAPL-2024.csv, chunk index 2292, source_type=csv, date range={'start': '2024-06-24', 'end': '2024-06-24'}
+Relevant Document 120, proc_AAPL-2024.csv, chunk index 2293, source_type=csv, date range={'start': '2024-06-25', 'end': '2024-06-25'}
+Relevant Document 121, proc_AAPL-2024.csv, chunk index 2294, source_type=csv, date range={'start': '2024-06-26', 'end': '2024-06-26'}
+Relevant Document 122, proc_AAPL-2024.csv, chunk index 2295, source_type=csv, date range={'start': '2024-06-27', 'end': '2024-06-27'}
+Relevant Document 123, proc_AAPL-2024.csv, chunk index 2296, source_type=csv, date range={'start': '2024-06-28', 'end': '2024-06-28'}
+Relevant Document 124, proc_AAPL-2024.csv, chunk index 2297, source_type=csv, date range={'start': '2024-07-01', 'end': '2024-07-01'}
+Relevant Document 125, proc_AAPL-2024.csv, chunk index 2298, source_type=csv, date range={'start': '2024-07-02', 'end': '2024-07-02'}
+Relevant Document 126, proc_AAPL-2024.csv, chunk index 2299, source_type=csv, date range={'start': '2024-07-03', 'end': '2024-07-03'}
+Relevant Document 127, proc_AAPL-2024.csv, chunk index 2300, source_type=csv, date range={'start': '2024-07-05', 'end': '2024-07-05'}
+Relevant Document 128, proc_AAPL-2024.csv, chunk index 2301, source_type=csv, date range={'start': '2024-07-08', 'end': '2024-07-08'}
+Relevant Document 129, proc_AAPL-2024.csv, chunk index 2302, source_type=csv, date range={'start': '2024-07-09', 'end': '2024-07-09'}
+Relevant Document 130, proc_AAPL-2024.csv, chunk index 2303, source_type=csv, date range={'start': '2024-07-10', 'end': '2024-07-10'}
+Relevant Document 131, proc_AAPL-2024.csv, chunk index 2304, source_type=csv, date range={'start': '2024-07-11', 'end': '2024-07-11'}
+Relevant Document 132, proc_AAPL-2024.csv, chunk index 2305, source_type=csv, date range={'start': '2024-07-12', 'end': '2024-07-12'}
+Relevant Document 133, proc_AAPL-2024.csv, chunk index 2306, source_type=csv, date range={'start': '2024-07-15', 'end': '2024-07-15'}
+Relevant Document 134, proc_AAPL-2024.csv, chunk index 2307, source_type=csv, date range={'start': '2024-07-16', 'end': '2024-07-16'}
+Relevant Document 135, proc_AAPL-2024.csv, chunk index 2308, source_type=csv, date range={'start': '2024-07-17', 'end': '2024-07-17'}
+Relevant Document 136, proc_AAPL-2024.csv, chunk index 2309, source_type=csv, date range={'start': '2024-07-18', 'end': '2024-07-18'}
+Relevant Document 137, proc_AAPL-2024.csv, chunk index 2310, source_type=csv, date range={'start': '2024-07-19', 'end': '2024-07-19'}
+Relevant Document 138, proc_AAPL-2024.csv, chunk index 2311, source_type=csv, date range={'start': '2024-07-22', 'end': '2024-07-22'}
+Relevant Document 139, proc_AAPL-2024.csv, chunk index 2312, source_type=csv, date range={'start': '2024-07-23', 'end': '2024-07-23'}
+Relevant Document 140, proc_AAPL-2024.csv, chunk index 2313, source_type=csv, date range={'start': '2024-07-24', 'end': '2024-07-24'}
+Relevant Document 141, proc_AAPL-2024.csv, chunk index 2314, source_type=csv, date range={'start': '2024-07-25', 'end': '2024-07-25'}
+Relevant Document 142, proc_AAPL-2024.csv, chunk index 2315, source_type=csv, date range={'start': '2024-07-26', 'end': '2024-07-26'}
+Relevant Document 143, proc_AAPL-2024.csv, chunk index 2316, source_type=csv, date range={'start': '2024-07-29', 'end': '2024-07-29'}
+Relevant Document 144, proc_AAPL-2024.csv, chunk index 2317, source_type=csv, date range={'start': '2024-07-30', 'end': '2024-07-30'}
+Relevant Document 145, proc_AAPL-2024.csv, chunk index 2318, source_type=csv, date range={'start': '2024-07-31', 'end': '2024-07-31'}
+Relevant Document 146, proc_AAPL-2024.csv, chunk index 2319, source_type=csv, date range={'start': '2024-08-01', 'end': '2024-08-01'}
+Relevant Document 147, proc_AAPL-2024.csv, chunk index 2320, source_type=csv, date range={'start': '2024-08-02', 'end': '2024-08-02'}
+Relevant Document 148, proc_AAPL-2024.csv, chunk index 2321, source_type=csv, date range={'start': '2024-08-05', 'end': '2024-08-05'}
+Relevant Document 149, proc_AAPL-2024.csv, chunk index 2322, source_type=csv, date range={'start': '2024-08-06', 'end': '2024-08-06'}
+Relevant Document 150, proc_AAPL-2024.csv, chunk index 2323, source_type=csv, date range={'start': '2024-08-07', 'end': '2024-08-07'}
+Relevant Document 151, proc_AAPL-2024.csv, chunk index 2324, source_type=csv, date range={'start': '2024-08-08', 'end': '2024-08-08'}
+Relevant Document 152, proc_AAPL-2024.csv, chunk index 2325, source_type=csv, date range={'start': '2024-08-09', 'end': '2024-08-09'}
+Relevant Document 153, proc_AAPL-2024.csv, chunk index 2326, source_type=csv, date range={'start': '2024-08-12', 'end': '2024-08-12'}
+Relevant Document 154, proc_AAPL-2024.csv, chunk index 2327, source_type=csv, date range={'start': '2024-08-13', 'end': '2024-08-13'}
+Relevant Document 155, proc_AAPL-2024.csv, chunk index 2328, source_type=csv, date range={'start': '2024-08-14', 'end': '2024-08-14'}
+Relevant Document 156, proc_AAPL-2024.csv, chunk index 2329, source_type=csv, date range={'start': '2024-08-15', 'end': '2024-08-15'}
+Relevant Document 157, proc_AAPL-2024.csv, chunk index 2330, source_type=csv, date range={'start': '2024-08-16', 'end': '2024-08-16'}
+Relevant Document 158, proc_AAPL-2024.csv, chunk index 2331, source_type=csv, date range={'start': '2024-08-19', 'end': '2024-08-19'}
+Relevant Document 159, proc_AAPL-2024.csv, chunk index 2332, source_type=csv, date range={'start': '2024-08-20', 'end': '2024-08-20'}
+Relevant Document 160, proc_AAPL-2024.csv, chunk index 2333, source_type=csv, date range={'start': '2024-08-21', 'end': '2024-08-21'}
+Relevant Document 161, proc_AAPL-2024.csv, chunk index 2334, source_type=csv, date range={'start': '2024-08-22', 'end': '2024-08-22'}
+Relevant Document 162, proc_AAPL-2024.csv, chunk index 2335, source_type=csv, date range={'start': '2024-08-23', 'end': '2024-08-23'}
+Relevant Document 163, proc_AAPL-2024.csv, chunk index 2336, source_type=csv, date range={'start': '2024-08-26', 'end': '2024-08-26'}
+Relevant Document 164, proc_AAPL-2024.csv, chunk index 2337, source_type=csv, date range={'start': '2024-08-27', 'end': '2024-08-27'}
+Relevant Document 165, proc_AAPL-2024.csv, chunk index 2338, source_type=csv, date range={'start': '2024-08-28', 'end': '2024-08-28'}
+Relevant Document 166, proc_AAPL-2024.csv, chunk index 2339, source_type=csv, date range={'start': '2024-08-29', 'end': '2024-08-29'}
+Relevant Document 167, proc_AAPL-2024.csv, chunk index 2340, source_type=csv, date range={'start': '2024-08-30', 'end': '2024-08-30'}
+Relevant Document 168, proc_AAPL-2024.csv, chunk index 2341, source_type=csv, date range={'start': '2024-09-03', 'end': '2024-09-03'}
+Relevant Document 169, proc_AAPL-2024.csv, chunk index 2342, source_type=csv, date range={'start': '2024-09-04', 'end': '2024-09-04'}
+Relevant Document 170, proc_AAPL-2024.csv, chunk index 2343, source_type=csv, date range={'start': '2024-09-05', 'end': '2024-09-05'}
+Relevant Document 171, proc_AAPL-2024.csv, chunk index 2344, source_type=csv, date range={'start': '2024-09-06', 'end': '2024-09-06'}
+Relevant Document 172, proc_AAPL-2024.csv, chunk index 2345, source_type=csv, date range={'start': '2024-09-09', 'end': '2024-09-09'}
+Relevant Document 173, proc_AAPL-2024.csv, chunk index 2346, source_type=csv, date range={'start': '2024-09-10', 'end': '2024-09-10'}
+Relevant Document 174, proc_AAPL-2024.csv, chunk index 2347, source_type=csv, date range={'start': '2024-09-11', 'end': '2024-09-11'}
+Relevant Document 175, proc_AAPL-2024.csv, chunk index 2348, source_type=csv, date range={'start': '2024-09-12', 'end': '2024-09-12'}
+Relevant Document 176, proc_AAPL-2024.csv, chunk index 2349, source_type=csv, date range={'start': '2024-09-13', 'end': '2024-09-13'}
+Relevant Document 177, proc_AAPL-2024.csv, chunk index 2350, source_type=csv, date range={'start': '2024-09-16', 'end': '2024-09-16'}
+Relevant Document 178, proc_AAPL-2024.csv, chunk index 2351, source_type=csv, date range={'start': '2024-09-17', 'end': '2024-09-17'}
+Relevant Document 179, proc_AAPL-2024.csv, chunk index 2352, source_type=csv, date range={'start': '2024-09-18', 'end': '2024-09-18'}
+Relevant Document 180, proc_AAPL-2024.csv, chunk index 2353, source_type=csv, date range={'start': '2024-09-19', 'end': '2024-09-19'}
+Relevant Document 181, proc_AAPL-2024.csv, chunk index 2354, source_type=csv, date range={'start': '2024-09-20', 'end': '2024-09-20'}
+Relevant Document 182, proc_AAPL-2024.csv, chunk index 2355, source_type=csv, date range={'start': '2024-09-23', 'end': '2024-09-23'}
+Relevant Document 183, proc_AAPL-2024.csv, chunk index 2356, source_type=csv, date range={'start': '2024-09-24', 'end': '2024-09-24'}
+Relevant Document 184, proc_AAPL-2024.csv, chunk index 2357, source_type=csv, date range={'start': '2024-09-25', 'end': '2024-09-25'}
+Relevant Document 185, proc_AAPL-2024.csv, chunk index 2358, source_type=csv, date range={'start': '2024-09-26', 'end': '2024-09-26'}
+Relevant Document 186, proc_AAPL-2024.csv, chunk index 2359, source_type=csv, date range={'start': '2024-09-27', 'end': '2024-09-27'}
+Relevant Document 187, proc_AAPL-2024.csv, chunk index 2360, source_type=csv, date range={'start': '2024-09-30', 'end': '2024-09-30'}
+Relevant Document 188, proc_AAPL-2024.csv, chunk index 2361, source_type=csv, date range={'start': '2024-10-01', 'end': '2024-10-01'}
+Relevant Document 189, proc_AAPL-2024.csv, chunk index 2362, source_type=csv, date range={'start': '2024-10-02', 'end': '2024-10-02'}
+Relevant Document 190, proc_AAPL-2024.csv, chunk index 2363, source_type=csv, date range={'start': '2024-10-03', 'end': '2024-10-03'}
+Relevant Document 191, proc_AAPL-2024.csv, chunk index 2364, source_type=csv, date range={'start': '2024-10-04', 'end': '2024-10-04'}
+Relevant Document 192, proc_AAPL-2024.csv, chunk index 2365, source_type=csv, date range={'start': '2024-10-07', 'end': '2024-10-07'}
+Relevant Document 193, proc_AAPL-2024.csv, chunk index 2366, source_type=csv, date range={'start': '2024-10-08', 'end': '2024-10-08'}
+Relevant Document 194, proc_AAPL-2024.csv, chunk index 2367, source_type=csv, date range={'start': '2024-10-09', 'end': '2024-10-09'}
+Relevant Document 195, proc_AAPL-2024.csv, chunk index 2368, source_type=csv, date range={'start': '2024-10-10', 'end': '2024-10-10'}
+Relevant Document 196, proc_AAPL-2024.csv, chunk index 2369, source_type=csv, date range={'start': '2024-10-11', 'end': '2024-10-11'}
+Relevant Document 197, proc_AAPL-2024.csv, chunk index 2370, source_type=csv, date range={'start': '2024-10-14', 'end': '2024-10-14'}
+Relevant Document 198, proc_AAPL-2024.csv, chunk index 2371, source_type=csv, date range={'start': '2024-10-15', 'end': '2024-10-15'}
+Relevant Document 199, proc_AAPL-2024.csv, chunk index 2372, source_type=csv, date range={'start': '2024-10-16', 'end': '2024-10-16'}
+Relevant Document 200, proc_AAPL-2024.csv, chunk index 2373, source_type=csv, date range={'start': '2024-10-17', 'end': '2024-10-17'}
+Relevant Document 201, proc_AAPL-2024.csv, chunk index 2374, source_type=csv, date range={'start': '2024-10-18', 'end': '2024-10-18'}
+Relevant Document 202, proc_AAPL-2024.csv, chunk index 2375, source_type=csv, date range={'start': '2024-10-21', 'end': '2024-10-21'}
+Relevant Document 203, proc_AAPL-2024.csv, chunk index 2376, source_type=csv, date range={'start': '2024-10-22', 'end': '2024-10-22'}
+Relevant Document 204, proc_AAPL-2024.csv, chunk index 2377, source_type=csv, date range={'start': '2024-10-23', 'end': '2024-10-23'}
+Relevant Document 205, proc_AAPL-2024.csv, chunk index 2378, source_type=csv, date range={'start': '2024-10-24', 'end': '2024-10-24'}
+Relevant Document 206, proc_AAPL-2024.csv, chunk index 2379, source_type=csv, date range={'start': '2024-10-25', 'end': '2024-10-25'}
+Relevant Document 207, proc_AAPL-2024.csv, chunk index 2380, source_type=csv, date range={'start': '2024-10-28', 'end': '2024-10-28'}
+Relevant Document 208, proc_AAPL-2024.csv, chunk index 2381, source_type=csv, date range={'start': '2024-10-29', 'end': '2024-10-29'}
+Relevant Document 209, proc_AAPL-2024.csv, chunk index 2382, source_type=csv, date range={'start': '2024-10-30', 'end': '2024-10-30'}
+Relevant Document 210, proc_AAPL-2024.csv, chunk index 2383, source_type=csv, date range={'start': '2024-10-31', 'end': '2024-10-31'}
+Relevant Document 211, proc_AAPL-2024.csv, chunk index 2384, source_type=csv, date range={'start': '2024-11-01', 'end': '2024-11-01'}
+Relevant Document 212, proc_AAPL-2024.csv, chunk index 2385, source_type=csv, date range={'start': '2024-11-04', 'end': '2024-11-04'}
+Relevant Document 213, proc_AAPL-2024.csv, chunk index 2386, source_type=csv, date range={'start': '2024-11-05', 'end': '2024-11-05'}
+Relevant Document 214, proc_AAPL-2024.csv, chunk index 2387, source_type=csv, date range={'start': '2024-11-06', 'end': '2024-11-06'}
+Relevant Document 215, proc_AAPL-2024.csv, chunk index 2388, source_type=csv, date range={'start': '2024-11-07', 'end': '2024-11-07'}
+Relevant Document 216, proc_AAPL-2024.csv, chunk index 2389, source_type=csv, date range={'start': '2024-11-08', 'end': '2024-11-08'}
+Relevant Document 217, proc_AAPL-2024.csv, chunk index 2390, source_type=csv, date range={'start': '2024-11-11', 'end': '2024-11-11'}
+Relevant Document 218, proc_AAPL-2024.csv, chunk index 2391, source_type=csv, date range={'start': '2024-11-12', 'end': '2024-11-12'}
+Relevant Document 219, proc_AAPL-2024.csv, chunk index 2392, source_type=csv, date range={'start': '2024-11-13', 'end': '2024-11-13'}
+Relevant Document 220, proc_AAPL-2024.csv, chunk index 2393, source_type=csv, date range={'start': '2024-11-14', 'end': '2024-11-14'}
+Relevant Document 221, proc_AAPL-2024.csv, chunk index 2394, source_type=csv, date range={'start': '2024-11-15', 'end': '2024-11-15'}
+Relevant Document 222, proc_AAPL-2024.csv, chunk index 2395, source_type=csv, date range={'start': '2024-11-18', 'end': '2024-11-18'}
+Relevant Document 223, proc_AAPL-2024.csv, chunk index 2396, source_type=csv, date range={'start': '2024-11-19', 'end': '2024-11-19'}
+Relevant Document 224, proc_AAPL-2024.csv, chunk index 2397, source_type=csv, date range={'start': '2024-11-20', 'end': '2024-11-20'}
+Relevant Document 225, proc_AAPL-2024.csv, chunk index 2398, source_type=csv, date range={'start': '2024-11-21', 'end': '2024-11-21'}
+Relevant Document 226, proc_AAPL-2024.csv, chunk index 2399, source_type=csv, date range={'start': '2024-11-22', 'end': '2024-11-22'}
+Relevant Document 227, proc_AAPL-2024.csv, chunk index 2400, source_type=csv, date range={'start': '2024-11-25', 'end': '2024-11-25'}
+Relevant Document 228, proc_AAPL-2024.csv, chunk index 2401, source_type=csv, date range={'start': '2024-11-26', 'end': '2024-11-26'}
+Relevant Document 229, proc_AAPL-2024.csv, chunk index 2402, source_type=csv, date range={'start': '2024-11-27', 'end': '2024-11-27'}
+Relevant Document 230, proc_AAPL-2024.csv, chunk index 2403, source_type=csv, date range={'start': '2024-11-29', 'end': '2024-11-29'}
+Relevant Document 231, proc_AAPL-2024.csv, chunk index 2404, source_type=csv, date range={'start': '2024-12-02', 'end': '2024-12-02'}
+Relevant Document 232, proc_AAPL-2024.csv, chunk index 2405, source_type=csv, date range={'start': '2024-12-03', 'end': '2024-12-03'}
+Relevant Document 233, proc_AAPL-2024.csv, chunk index 2406, source_type=csv, date range={'start': '2024-12-04', 'end': '2024-12-04'}
+Relevant Document 234, proc_AAPL-2024.csv, chunk index 2407, source_type=csv, date range={'start': '2024-12-05', 'end': '2024-12-05'}
+Relevant Document 235, proc_AAPL-2024.csv, chunk index 2408, source_type=csv, date range={'start': '2024-12-06', 'end': '2024-12-06'}
+Relevant Document 236, proc_AAPL-2024.csv, chunk index 2409, source_type=csv, date range={'start': '2024-12-09', 'end': '2024-12-09'}
+Relevant Document 237, proc_AAPL-2024.csv, chunk index 2410, source_type=csv, date range={'start': '2024-12-10', 'end': '2024-12-10'}
+Relevant Document 238, proc_AAPL-2024.csv, chunk index 2411, source_type=csv, date range={'start': '2024-12-11', 'end': '2024-12-11'}
+Relevant Document 239, proc_AAPL-2024.csv, chunk index 2412, source_type=csv, date range={'start': '2024-12-12', 'end': '2024-12-12'}
+Relevant Document 240, proc_AAPL-2024.csv, chunk index 2413, source_type=csv, date range={'start': '2024-12-13', 'end': '2024-12-13'}
+Relevant Document 241, proc_AAPL-2024.csv, chunk index 2414, source_type=csv, date range={'start': '2024-12-16', 'end': '2024-12-16'}
+Relevant Document 242, proc_AAPL-2024.csv, chunk index 2415, source_type=csv, date range={'start': '2024-12-17', 'end': '2024-12-17'}
+Relevant Document 243, proc_AAPL-2024.csv, chunk index 2416, source_type=csv, date range={'start': '2024-12-18', 'end': '2024-12-18'}
+Relevant Document 244, proc_AAPL-2024.csv, chunk index 2417, source_type=csv, date range={'start': '2024-12-19', 'end': '2024-12-19'}
+Relevant Document 245, proc_AAPL-2024.csv, chunk index 2418, source_type=csv, date range={'start': '2024-12-20', 'end': '2024-12-20'}
+Relevant Document 246, proc_AAPL-2024.csv, chunk index 2419, source_type=csv, date range={'start': '2024-12-23', 'end': '2024-12-23'}
+Relevant Document 247, proc_AAPL-2024.csv, chunk index 2420, source_type=csv, date range={'start': '2024-12-24', 'end': '2024-12-24'}
+Relevant Document 248, proc_AAPL-2024.csv, chunk index 2421, source_type=csv, date range={'start': '2024-12-26', 'end': '2024-12-26'}
+Relevant Document 249, proc_AAPL-2024.csv, chunk index 2422, source_type=csv, date range={'start': '2024-12-27', 'end': '2024-12-27'}
+Relevant Document 250, proc_AAPL-2024.csv, chunk index 2423, source_type=csv, date range={'start': '2024-12-30', 'end': '2024-12-30'}
+Relevant Document 251, proc_AAPL-2024.csv, chunk index 2424, source_type=csv, date range={'start': '2024-12-31', 'end': '2024-12-31'}
+Relevant Document 252, NASDAQ_AAPL_2024.txt, chunk index 19, source_type=pdf, year=2024
+Relevant Document 253, NASDAQ_AAPL_2024.txt, chunk index 21, source_type=pdf, year=2024
+Relevant Document 254, NASDAQ_AAPL_2024.txt, chunk index 20, source_type=pdf, year=2024
+Relevant Document 255, NASDAQ_AAPL_2024.txt, chunk index 28, source_type=pdf, year=2024
+Relevant Document 256, NASDAQ_AAPL_2024.txt, chunk index 22, source_type=pdf, year=2024
+Relevant Document 257, NASDAQ_AAPL_2024.txt, chunk index 29, source_type=pdf, year=2024
+Relevant Document 258, NASDAQ_AAPL_2024.txt, chunk index 32, source_type=pdf, year=2024
+Relevant Document 259, NASDAQ_AAPL_2024.txt, chunk index 43, source_type=pdf, year=2024
+Relevant Document 260, NASDAQ_AAPL_2024.txt, chunk index 27, source_type=pdf, year=2024
+Relevant Document 261, NASDAQ_AAPL_2024.txt, chunk index 33, source_type=pdf, year=2024
+Using model: openai.gpt-oss-120b-1:0
+
+
+
+----
+Response:
+Usage: {'inputTokens': 22366, 'outputTokens': 9772, 'totalTokens': 32138}
+Metrics: {'latencyMs': 44317}
+**Answer:** Apple had **33 strictly‑positive‑return weeks** in calendar year 2024.
+
+**How the answer was derived**
+
+1. The daily closing prices for AAPL in 2024 are listed in the CSV files (e.g., 2024‑01‑02 $185.64, 2024‑01‑03 $184.25 … 2024‑12‑31 $250.42).【0†L1-L4】【251†L1-L4】
+
+2. Weeks were defined by the ISO calendar (Monday → Sunday).  
+   For each week the first trading‑day close and the last trading‑day close were identified, and the weekly return was calculated as  
+
+   \[
+   \text{Return}= \frac{\text{Close}_{\text{last}}-\text{Close}_{\text{first}}}{\text{Close}_{\text{first}}}
+   \]
+
+3. A week counted as “positive” only when the return was **strictly greater than 0**.
+
+4. Applying this rule to every week of 2024 gives the following weekly outcomes (P = positive, N = negative):
+
+| Week (Mon‑Sun) | Outcome |
+|----------------|----------|
+| 1 (2024‑01‑01 – 01‑07) | N |
+| 2 (01‑08 – 01‑14) | **P** |
+| 3 (01‑15 – 01‑21) | **P** |
+| 4 (01‑22 – 01‑28) | N |
+| 5 (01‑29 – 02‑04) | N |
+| 6 (02‑05 – 02‑11) | **P** |
+| 7 (02‑12 – 02‑18) | N |
+| 8 (02‑19 – 02‑25) | **P** |
+| 9 (02‑26 – 03‑03) | N |
+| 10 (03‑04 – 03‑10) | N |
+| 11 (03‑11 – 03‑17) | N |
+| 12 (03‑18 – 03‑24) | N |
+| 13 (03‑25 – 03‑31) | **P** |
+| 14 (04‑01 – 04‑07) | N |
+| 15 (04‑08 – 04‑14) | **P** |
+| 16 (04‑15 – 04‑21) | N |
+| 17 (04‑22 – 04‑28) | **P** |
+| 18 (04‑29 – 05‑05) | **P** |
+| 19 (05‑06 – 05‑12) | **P** |
+| 20 (05‑13 – 05‑19) | **P** |
+| 21 (05‑20 – 05‑26) | N |
+| 22 (05‑27 – 06‑02) | **P** |
+| 23 (06‑03 – 06‑09) | **P** |
+| 24 (06‑10 – 06‑16) | **P** |
+| 25 (06‑17 – 06‑23) | N |
+| 26 (06‑24 – 06‑30) | **P** |
+| 27 (07‑01 – 07‑07) | **P** |
+| 28 (07‑08 – 07‑14) | **P** |
+| 29 (07‑15 – 07‑21) | N |
+| 30 (07‑22 – 07‑28) | N |
+| 31 (07‑29 – 08‑04) | **P** |
+| 32 (08‑05 – 08‑11) | **P** |
+| 33 (08‑12 – 08‑18) | **P** |
+| 34 (08‑19 – 08‑25) | **P** |
+| 35 (08‑26 – 09‑01) | N |
+| 36 (09‑02 – 09‑08) | N |
+| 37 (09‑09 – 09‑15) | **P** |
+| 38 (09‑16 – 09‑22) | **P** |
+| 39 (09‑23 – 09‑29) | **P** |
+| 40 (09‑30 – 10‑06) | N |
+| 41 (10‑07 – 10‑13) | **P** |
+| 42 (10‑14 – 10‑20) | **P** |
+| 43 (10‑21 – 10‑27) | N |
+| 44 (10‑28 – 11‑03) | N |
+| 45 (11‑04 – 11‑10) | **P** |
+| 46 (11‑11 – 11‑17) | **P** |
+| 47 (11‑18 – 11‑24) | **P** |
+| 48 (11‑25 – 12‑01) | **P** |
+| 49 (12‑02 – 12‑08) | **P** |
+| 50 (12‑09 – 12‑15) | **P** |
+| 51 (12‑16 – 12‑22) | **P** |
+| 52 (12‑23 – 12‑29) | **P** |
+| 53 (12‑30 – 12‑31) | N |
+
+5. Counting the “P” rows gives **33 weeks** with a strictly positive return.
+
+Hence, based solely on the provided daily closing‑price data, Apple recorded **33 weeks in 2024 where the stock price end‑of‑week was higher than the start‑of‑week**.

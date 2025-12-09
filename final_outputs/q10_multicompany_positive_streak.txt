@@ -1,0 +1,923 @@
+[INFO] Qdrant running at http://localhost:6333
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over CSV stocks/company share data.
+
+The CSV files have headers like:
+- ticker, date, date_ts, open, high, low, close, volume, year, quarter
+
+Given a user query of:
+"Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
+
+Possible query:
+"company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison"
+
+If you are unsure of the ticker symbol of a company, guess multiple possible symbols within an "any" match.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
+You're only given two metadata keys: company and date_range
+chunk_count is the number of business days within the date range for a given company
+{
+    "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
+    "filters: [
+        {
+            "must": [
+                    {"key": "company", "match": {"value": "AAPL"}},
+                    {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                    {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+                ],
+            "chunk_count": 81,
+        },
+        {
+            "must": [
+                {"key": "company", "match": {"value": "MSFT"}},
+                {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+            ],
+            "chunk_count": 81
+        }
+    ]
+}
+Reasoning: high
+
+
+Your task:
+- Read the user's question.
+- Infer the correct tickers, date ranges, and any other needed filters.
+- You will first rewrite the user query then add it to a given valid Python dict literal.
+- Return ONLY a valid JSON object in this exact qdrant query format.
+- Do NOT include backticks, explanations, or any surrounding text. Just a valid python dictionary.
+- If the prompt does not require financial data retrieval, (e.g. questions about company strategies,
+  products, or other non-fiscal topics), return an empty query with zero chunk count:
+{
+    "query": "<optimized query text>",
+    "filters": [],
+    "chunk_count": 0
+}
+Remember, questions with numerical or date references often imply a need for financial data retrieval. Be sure to include relevant filters for such queries and a non-zero chunk count.
+
+user: Which of these companies had a positive growth streak lasting 10 weeks in 2023: Amazon, Meta, Broadcom, TSMC.
+
+----
+Response:
+Usage: {'inputTokens': 709, 'outputTokens': 1404, 'totalTokens': 2113}
+Metrics: {'latencyMs': 9133}
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over PDF financial reports such as 10-Ks, 10-Qs, and annual reports.
+
+Rewrite the user's question into a short, dense query that:
+- Mentions the company names, segments (e.g., "Google Search"), and years.
+- Targets sections like "Results of Operations", "Segment Results", "Revenue", and
+  commentary on growth, drivers, and profitability.
+- Uses phrases that are likely to appear in those reports, like
+  "year-over-year", "segment revenue", "results of operations", "management discussion".
+- Targets keywords relevant to the question and financial analysis.
+
+You may also use filters on the "company" (ticker symbol) and "year" keys if specific companies or years are mentioned.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+The company key is based of the stock ticker symbol, e.g., "AAPL" for Apple, "MSFT" for Microsoft, "GOOGL" for Google, etc.
+If you are unsure of the ticker symbol, guess multiple possible symbols.
+
+For example, given the user question, "What were key revenue figures for Amazon and Oracle in 2021.",
+a optimized query would be:
+{
+    "query": <optimized query text>,
+    "filters": [
+        {
+            "must": [
+                {"key": "year", "match": {"value": "2021"}},
+                {"key": "company", "match": {"any": ["AMZN", "ORCL"]}}
+            ]
+        }
+    ]
+}
+
+Be concise. No explanations, just the optimized query.
+
+user: Which of these companies had a positive growth streak lasting 10 weeks in 2023: Amazon, Meta, Broadcom, TSMC.
+
+----
+Response:
+Usage: {'inputTokens': 469, 'outputTokens': 421, 'totalTokens': 890}
+Metrics: {'latencyMs': 2953}
+CSV CHUNK COUNTS:  750
+Retrieved the following docs:
+Relevant Document 0, proc_AVGO-2023.csv, chunk index 3235, source_type=csv, date range={'start': '2023-01-03', 'end': '2023-01-03'}
+Relevant Document 1, proc_AMZN-2023.csv, chunk index 590, source_type=csv, date range={'start': '2023-01-03', 'end': '2023-01-03'}
+Relevant Document 2, proc_META-2023.csv, chunk index 5881, source_type=csv, date range={'start': '2023-01-03', 'end': '2023-01-03'}
+Relevant Document 3, proc_AVGO-2023.csv, chunk index 3236, source_type=csv, date range={'start': '2023-01-04', 'end': '2023-01-04'}
+Relevant Document 4, proc_AMZN-2023.csv, chunk index 591, source_type=csv, date range={'start': '2023-01-04', 'end': '2023-01-04'}
+Relevant Document 5, proc_META-2023.csv, chunk index 5882, source_type=csv, date range={'start': '2023-01-04', 'end': '2023-01-04'}
+Relevant Document 6, proc_AVGO-2023.csv, chunk index 3237, source_type=csv, date range={'start': '2023-01-05', 'end': '2023-01-05'}
+Relevant Document 7, proc_AMZN-2023.csv, chunk index 592, source_type=csv, date range={'start': '2023-01-05', 'end': '2023-01-05'}
+Relevant Document 8, proc_META-2023.csv, chunk index 5883, source_type=csv, date range={'start': '2023-01-05', 'end': '2023-01-05'}
+Relevant Document 9, proc_AVGO-2023.csv, chunk index 3238, source_type=csv, date range={'start': '2023-01-06', 'end': '2023-01-06'}
+Relevant Document 10, proc_AMZN-2023.csv, chunk index 593, source_type=csv, date range={'start': '2023-01-06', 'end': '2023-01-06'}
+Relevant Document 11, proc_META-2023.csv, chunk index 5884, source_type=csv, date range={'start': '2023-01-06', 'end': '2023-01-06'}
+Relevant Document 12, proc_AVGO-2023.csv, chunk index 3239, source_type=csv, date range={'start': '2023-01-09', 'end': '2023-01-09'}
+Relevant Document 13, proc_AMZN-2023.csv, chunk index 594, source_type=csv, date range={'start': '2023-01-09', 'end': '2023-01-09'}
+Relevant Document 14, proc_META-2023.csv, chunk index 5885, source_type=csv, date range={'start': '2023-01-09', 'end': '2023-01-09'}
+Relevant Document 15, proc_AVGO-2023.csv, chunk index 3240, source_type=csv, date range={'start': '2023-01-10', 'end': '2023-01-10'}
+Relevant Document 16, proc_AMZN-2023.csv, chunk index 595, source_type=csv, date range={'start': '2023-01-10', 'end': '2023-01-10'}
+Relevant Document 17, proc_META-2023.csv, chunk index 5886, source_type=csv, date range={'start': '2023-01-10', 'end': '2023-01-10'}
+Relevant Document 18, proc_AVGO-2023.csv, chunk index 3241, source_type=csv, date range={'start': '2023-01-11', 'end': '2023-01-11'}
+Relevant Document 19, proc_AMZN-2023.csv, chunk index 596, source_type=csv, date range={'start': '2023-01-11', 'end': '2023-01-11'}
+Relevant Document 20, proc_META-2023.csv, chunk index 5887, source_type=csv, date range={'start': '2023-01-11', 'end': '2023-01-11'}
+Relevant Document 21, proc_AVGO-2023.csv, chunk index 3242, source_type=csv, date range={'start': '2023-01-12', 'end': '2023-01-12'}
+Relevant Document 22, proc_AMZN-2023.csv, chunk index 597, source_type=csv, date range={'start': '2023-01-12', 'end': '2023-01-12'}
+Relevant Document 23, proc_META-2023.csv, chunk index 5888, source_type=csv, date range={'start': '2023-01-12', 'end': '2023-01-12'}
+Relevant Document 24, proc_AVGO-2023.csv, chunk index 3243, source_type=csv, date range={'start': '2023-01-13', 'end': '2023-01-13'}
+Relevant Document 25, proc_AMZN-2023.csv, chunk index 598, source_type=csv, date range={'start': '2023-01-13', 'end': '2023-01-13'}
+Relevant Document 26, proc_META-2023.csv, chunk index 5889, source_type=csv, date range={'start': '2023-01-13', 'end': '2023-01-13'}
+Relevant Document 27, proc_AVGO-2023.csv, chunk index 3244, source_type=csv, date range={'start': '2023-01-17', 'end': '2023-01-17'}
+Relevant Document 28, proc_AMZN-2023.csv, chunk index 599, source_type=csv, date range={'start': '2023-01-17', 'end': '2023-01-17'}
+Relevant Document 29, proc_META-2023.csv, chunk index 5890, source_type=csv, date range={'start': '2023-01-17', 'end': '2023-01-17'}
+Relevant Document 30, proc_AVGO-2023.csv, chunk index 3245, source_type=csv, date range={'start': '2023-01-18', 'end': '2023-01-18'}
+Relevant Document 31, proc_AMZN-2023.csv, chunk index 600, source_type=csv, date range={'start': '2023-01-18', 'end': '2023-01-18'}
+Relevant Document 32, proc_META-2023.csv, chunk index 5891, source_type=csv, date range={'start': '2023-01-18', 'end': '2023-01-18'}
+Relevant Document 33, proc_AVGO-2023.csv, chunk index 3246, source_type=csv, date range={'start': '2023-01-19', 'end': '2023-01-19'}
+Relevant Document 34, proc_AMZN-2023.csv, chunk index 601, source_type=csv, date range={'start': '2023-01-19', 'end': '2023-01-19'}
+Relevant Document 35, proc_META-2023.csv, chunk index 5892, source_type=csv, date range={'start': '2023-01-19', 'end': '2023-01-19'}
+Relevant Document 36, proc_AVGO-2023.csv, chunk index 3247, source_type=csv, date range={'start': '2023-01-20', 'end': '2023-01-20'}
+Relevant Document 37, proc_AMZN-2023.csv, chunk index 602, source_type=csv, date range={'start': '2023-01-20', 'end': '2023-01-20'}
+Relevant Document 38, proc_META-2023.csv, chunk index 5893, source_type=csv, date range={'start': '2023-01-20', 'end': '2023-01-20'}
+Relevant Document 39, proc_AVGO-2023.csv, chunk index 3248, source_type=csv, date range={'start': '2023-01-23', 'end': '2023-01-23'}
+Relevant Document 40, proc_AMZN-2023.csv, chunk index 603, source_type=csv, date range={'start': '2023-01-23', 'end': '2023-01-23'}
+Relevant Document 41, proc_META-2023.csv, chunk index 5894, source_type=csv, date range={'start': '2023-01-23', 'end': '2023-01-23'}
+Relevant Document 42, proc_AVGO-2023.csv, chunk index 3249, source_type=csv, date range={'start': '2023-01-24', 'end': '2023-01-24'}
+Relevant Document 43, proc_AMZN-2023.csv, chunk index 604, source_type=csv, date range={'start': '2023-01-24', 'end': '2023-01-24'}
+Relevant Document 44, proc_META-2023.csv, chunk index 5895, source_type=csv, date range={'start': '2023-01-24', 'end': '2023-01-24'}
+Relevant Document 45, proc_AVGO-2023.csv, chunk index 3250, source_type=csv, date range={'start': '2023-01-25', 'end': '2023-01-25'}
+Relevant Document 46, proc_AMZN-2023.csv, chunk index 605, source_type=csv, date range={'start': '2023-01-25', 'end': '2023-01-25'}
+Relevant Document 47, proc_META-2023.csv, chunk index 5896, source_type=csv, date range={'start': '2023-01-25', 'end': '2023-01-25'}
+Relevant Document 48, proc_AVGO-2023.csv, chunk index 3251, source_type=csv, date range={'start': '2023-01-26', 'end': '2023-01-26'}
+Relevant Document 49, proc_AMZN-2023.csv, chunk index 606, source_type=csv, date range={'start': '2023-01-26', 'end': '2023-01-26'}
+Relevant Document 50, proc_META-2023.csv, chunk index 5897, source_type=csv, date range={'start': '2023-01-26', 'end': '2023-01-26'}
+Relevant Document 51, proc_AVGO-2023.csv, chunk index 3252, source_type=csv, date range={'start': '2023-01-27', 'end': '2023-01-27'}
+Relevant Document 52, proc_AMZN-2023.csv, chunk index 607, source_type=csv, date range={'start': '2023-01-27', 'end': '2023-01-27'}
+Relevant Document 53, proc_META-2023.csv, chunk index 5898, source_type=csv, date range={'start': '2023-01-27', 'end': '2023-01-27'}
+Relevant Document 54, proc_AVGO-2023.csv, chunk index 3253, source_type=csv, date range={'start': '2023-01-30', 'end': '2023-01-30'}
+Relevant Document 55, proc_AMZN-2023.csv, chunk index 608, source_type=csv, date range={'start': '2023-01-30', 'end': '2023-01-30'}
+Relevant Document 56, proc_META-2023.csv, chunk index 5899, source_type=csv, date range={'start': '2023-01-30', 'end': '2023-01-30'}
+Relevant Document 57, proc_AVGO-2023.csv, chunk index 3254, source_type=csv, date range={'start': '2023-01-31', 'end': '2023-01-31'}
+Relevant Document 58, proc_AMZN-2023.csv, chunk index 609, source_type=csv, date range={'start': '2023-01-31', 'end': '2023-01-31'}
+Relevant Document 59, proc_META-2023.csv, chunk index 5900, source_type=csv, date range={'start': '2023-01-31', 'end': '2023-01-31'}
+Relevant Document 60, proc_AVGO-2023.csv, chunk index 3255, source_type=csv, date range={'start': '2023-02-01', 'end': '2023-02-01'}
+Relevant Document 61, proc_AMZN-2023.csv, chunk index 610, source_type=csv, date range={'start': '2023-02-01', 'end': '2023-02-01'}
+Relevant Document 62, proc_META-2023.csv, chunk index 5901, source_type=csv, date range={'start': '2023-02-01', 'end': '2023-02-01'}
+Relevant Document 63, proc_AVGO-2023.csv, chunk index 3256, source_type=csv, date range={'start': '2023-02-02', 'end': '2023-02-02'}
+Relevant Document 64, proc_AMZN-2023.csv, chunk index 611, source_type=csv, date range={'start': '2023-02-02', 'end': '2023-02-02'}
+Relevant Document 65, proc_META-2023.csv, chunk index 5902, source_type=csv, date range={'start': '2023-02-02', 'end': '2023-02-02'}
+Relevant Document 66, proc_AVGO-2023.csv, chunk index 3257, source_type=csv, date range={'start': '2023-02-03', 'end': '2023-02-03'}
+Relevant Document 67, proc_AMZN-2023.csv, chunk index 612, source_type=csv, date range={'start': '2023-02-03', 'end': '2023-02-03'}
+Relevant Document 68, proc_META-2023.csv, chunk index 5903, source_type=csv, date range={'start': '2023-02-03', 'end': '2023-02-03'}
+Relevant Document 69, proc_AVGO-2023.csv, chunk index 3258, source_type=csv, date range={'start': '2023-02-06', 'end': '2023-02-06'}
+Relevant Document 70, proc_AMZN-2023.csv, chunk index 613, source_type=csv, date range={'start': '2023-02-06', 'end': '2023-02-06'}
+Relevant Document 71, proc_META-2023.csv, chunk index 5904, source_type=csv, date range={'start': '2023-02-06', 'end': '2023-02-06'}
+Relevant Document 72, proc_AVGO-2023.csv, chunk index 3259, source_type=csv, date range={'start': '2023-02-07', 'end': '2023-02-07'}
+Relevant Document 73, proc_AMZN-2023.csv, chunk index 614, source_type=csv, date range={'start': '2023-02-07', 'end': '2023-02-07'}
+Relevant Document 74, proc_META-2023.csv, chunk index 5905, source_type=csv, date range={'start': '2023-02-07', 'end': '2023-02-07'}
+Relevant Document 75, proc_AVGO-2023.csv, chunk index 3260, source_type=csv, date range={'start': '2023-02-08', 'end': '2023-02-08'}
+Relevant Document 76, proc_AMZN-2023.csv, chunk index 615, source_type=csv, date range={'start': '2023-02-08', 'end': '2023-02-08'}
+Relevant Document 77, proc_META-2023.csv, chunk index 5906, source_type=csv, date range={'start': '2023-02-08', 'end': '2023-02-08'}
+Relevant Document 78, proc_AVGO-2023.csv, chunk index 3261, source_type=csv, date range={'start': '2023-02-09', 'end': '2023-02-09'}
+Relevant Document 79, proc_AMZN-2023.csv, chunk index 616, source_type=csv, date range={'start': '2023-02-09', 'end': '2023-02-09'}
+Relevant Document 80, proc_META-2023.csv, chunk index 5907, source_type=csv, date range={'start': '2023-02-09', 'end': '2023-02-09'}
+Relevant Document 81, proc_AVGO-2023.csv, chunk index 3262, source_type=csv, date range={'start': '2023-02-10', 'end': '2023-02-10'}
+Relevant Document 82, proc_AMZN-2023.csv, chunk index 617, source_type=csv, date range={'start': '2023-02-10', 'end': '2023-02-10'}
+Relevant Document 83, proc_META-2023.csv, chunk index 5908, source_type=csv, date range={'start': '2023-02-10', 'end': '2023-02-10'}
+Relevant Document 84, proc_AVGO-2023.csv, chunk index 3263, source_type=csv, date range={'start': '2023-02-13', 'end': '2023-02-13'}
+Relevant Document 85, proc_AMZN-2023.csv, chunk index 618, source_type=csv, date range={'start': '2023-02-13', 'end': '2023-02-13'}
+Relevant Document 86, proc_META-2023.csv, chunk index 5909, source_type=csv, date range={'start': '2023-02-13', 'end': '2023-02-13'}
+Relevant Document 87, proc_AVGO-2023.csv, chunk index 3264, source_type=csv, date range={'start': '2023-02-14', 'end': '2023-02-14'}
+Relevant Document 88, proc_AMZN-2023.csv, chunk index 619, source_type=csv, date range={'start': '2023-02-14', 'end': '2023-02-14'}
+Relevant Document 89, proc_META-2023.csv, chunk index 5910, source_type=csv, date range={'start': '2023-02-14', 'end': '2023-02-14'}
+Relevant Document 90, proc_AVGO-2023.csv, chunk index 3265, source_type=csv, date range={'start': '2023-02-15', 'end': '2023-02-15'}
+Relevant Document 91, proc_AMZN-2023.csv, chunk index 620, source_type=csv, date range={'start': '2023-02-15', 'end': '2023-02-15'}
+Relevant Document 92, proc_META-2023.csv, chunk index 5911, source_type=csv, date range={'start': '2023-02-15', 'end': '2023-02-15'}
+Relevant Document 93, proc_AVGO-2023.csv, chunk index 3266, source_type=csv, date range={'start': '2023-02-16', 'end': '2023-02-16'}
+Relevant Document 94, proc_AMZN-2023.csv, chunk index 621, source_type=csv, date range={'start': '2023-02-16', 'end': '2023-02-16'}
+Relevant Document 95, proc_META-2023.csv, chunk index 5912, source_type=csv, date range={'start': '2023-02-16', 'end': '2023-02-16'}
+Relevant Document 96, proc_AVGO-2023.csv, chunk index 3267, source_type=csv, date range={'start': '2023-02-17', 'end': '2023-02-17'}
+Relevant Document 97, proc_AMZN-2023.csv, chunk index 622, source_type=csv, date range={'start': '2023-02-17', 'end': '2023-02-17'}
+Relevant Document 98, proc_META-2023.csv, chunk index 5913, source_type=csv, date range={'start': '2023-02-17', 'end': '2023-02-17'}
+Relevant Document 99, proc_AVGO-2023.csv, chunk index 3268, source_type=csv, date range={'start': '2023-02-21', 'end': '2023-02-21'}
+Relevant Document 100, proc_AMZN-2023.csv, chunk index 623, source_type=csv, date range={'start': '2023-02-21', 'end': '2023-02-21'}
+Relevant Document 101, proc_META-2023.csv, chunk index 5914, source_type=csv, date range={'start': '2023-02-21', 'end': '2023-02-21'}
+Relevant Document 102, proc_AVGO-2023.csv, chunk index 3269, source_type=csv, date range={'start': '2023-02-22', 'end': '2023-02-22'}
+Relevant Document 103, proc_AMZN-2023.csv, chunk index 624, source_type=csv, date range={'start': '2023-02-22', 'end': '2023-02-22'}
+Relevant Document 104, proc_META-2023.csv, chunk index 5915, source_type=csv, date range={'start': '2023-02-22', 'end': '2023-02-22'}
+Relevant Document 105, proc_AVGO-2023.csv, chunk index 3270, source_type=csv, date range={'start': '2023-02-23', 'end': '2023-02-23'}
+Relevant Document 106, proc_AMZN-2023.csv, chunk index 625, source_type=csv, date range={'start': '2023-02-23', 'end': '2023-02-23'}
+Relevant Document 107, proc_META-2023.csv, chunk index 5916, source_type=csv, date range={'start': '2023-02-23', 'end': '2023-02-23'}
+Relevant Document 108, proc_AVGO-2023.csv, chunk index 3271, source_type=csv, date range={'start': '2023-02-24', 'end': '2023-02-24'}
+Relevant Document 109, proc_AMZN-2023.csv, chunk index 626, source_type=csv, date range={'start': '2023-02-24', 'end': '2023-02-24'}
+Relevant Document 110, proc_META-2023.csv, chunk index 5917, source_type=csv, date range={'start': '2023-02-24', 'end': '2023-02-24'}
+Relevant Document 111, proc_AVGO-2023.csv, chunk index 3272, source_type=csv, date range={'start': '2023-02-27', 'end': '2023-02-27'}
+Relevant Document 112, proc_AMZN-2023.csv, chunk index 627, source_type=csv, date range={'start': '2023-02-27', 'end': '2023-02-27'}
+Relevant Document 113, proc_META-2023.csv, chunk index 5918, source_type=csv, date range={'start': '2023-02-27', 'end': '2023-02-27'}
+Relevant Document 114, proc_AVGO-2023.csv, chunk index 3273, source_type=csv, date range={'start': '2023-02-28', 'end': '2023-02-28'}
+Relevant Document 115, proc_AMZN-2023.csv, chunk index 628, source_type=csv, date range={'start': '2023-02-28', 'end': '2023-02-28'}
+Relevant Document 116, proc_META-2023.csv, chunk index 5919, source_type=csv, date range={'start': '2023-02-28', 'end': '2023-02-28'}
+Relevant Document 117, proc_AVGO-2023.csv, chunk index 3274, source_type=csv, date range={'start': '2023-03-01', 'end': '2023-03-01'}
+Relevant Document 118, proc_AMZN-2023.csv, chunk index 629, source_type=csv, date range={'start': '2023-03-01', 'end': '2023-03-01'}
+Relevant Document 119, proc_META-2023.csv, chunk index 5920, source_type=csv, date range={'start': '2023-03-01', 'end': '2023-03-01'}
+Relevant Document 120, proc_AVGO-2023.csv, chunk index 3275, source_type=csv, date range={'start': '2023-03-02', 'end': '2023-03-02'}
+Relevant Document 121, proc_AMZN-2023.csv, chunk index 630, source_type=csv, date range={'start': '2023-03-02', 'end': '2023-03-02'}
+Relevant Document 122, proc_META-2023.csv, chunk index 5921, source_type=csv, date range={'start': '2023-03-02', 'end': '2023-03-02'}
+Relevant Document 123, proc_AVGO-2023.csv, chunk index 3276, source_type=csv, date range={'start': '2023-03-03', 'end': '2023-03-03'}
+Relevant Document 124, proc_AMZN-2023.csv, chunk index 631, source_type=csv, date range={'start': '2023-03-03', 'end': '2023-03-03'}
+Relevant Document 125, proc_META-2023.csv, chunk index 5922, source_type=csv, date range={'start': '2023-03-03', 'end': '2023-03-03'}
+Relevant Document 126, proc_AVGO-2023.csv, chunk index 3277, source_type=csv, date range={'start': '2023-03-06', 'end': '2023-03-06'}
+Relevant Document 127, proc_AMZN-2023.csv, chunk index 632, source_type=csv, date range={'start': '2023-03-06', 'end': '2023-03-06'}
+Relevant Document 128, proc_META-2023.csv, chunk index 5923, source_type=csv, date range={'start': '2023-03-06', 'end': '2023-03-06'}
+Relevant Document 129, proc_AVGO-2023.csv, chunk index 3278, source_type=csv, date range={'start': '2023-03-07', 'end': '2023-03-07'}
+Relevant Document 130, proc_AMZN-2023.csv, chunk index 633, source_type=csv, date range={'start': '2023-03-07', 'end': '2023-03-07'}
+Relevant Document 131, proc_META-2023.csv, chunk index 5924, source_type=csv, date range={'start': '2023-03-07', 'end': '2023-03-07'}
+Relevant Document 132, proc_AVGO-2023.csv, chunk index 3279, source_type=csv, date range={'start': '2023-03-08', 'end': '2023-03-08'}
+Relevant Document 133, proc_AMZN-2023.csv, chunk index 634, source_type=csv, date range={'start': '2023-03-08', 'end': '2023-03-08'}
+Relevant Document 134, proc_META-2023.csv, chunk index 5925, source_type=csv, date range={'start': '2023-03-08', 'end': '2023-03-08'}
+Relevant Document 135, proc_AVGO-2023.csv, chunk index 3280, source_type=csv, date range={'start': '2023-03-09', 'end': '2023-03-09'}
+Relevant Document 136, proc_AMZN-2023.csv, chunk index 635, source_type=csv, date range={'start': '2023-03-09', 'end': '2023-03-09'}
+Relevant Document 137, proc_META-2023.csv, chunk index 5926, source_type=csv, date range={'start': '2023-03-09', 'end': '2023-03-09'}
+Relevant Document 138, proc_AVGO-2023.csv, chunk index 3281, source_type=csv, date range={'start': '2023-03-10', 'end': '2023-03-10'}
+Relevant Document 139, proc_AMZN-2023.csv, chunk index 636, source_type=csv, date range={'start': '2023-03-10', 'end': '2023-03-10'}
+Relevant Document 140, proc_META-2023.csv, chunk index 5927, source_type=csv, date range={'start': '2023-03-10', 'end': '2023-03-10'}
+Relevant Document 141, proc_AVGO-2023.csv, chunk index 3282, source_type=csv, date range={'start': '2023-03-13', 'end': '2023-03-13'}
+Relevant Document 142, proc_AMZN-2023.csv, chunk index 637, source_type=csv, date range={'start': '2023-03-13', 'end': '2023-03-13'}
+Relevant Document 143, proc_META-2023.csv, chunk index 5928, source_type=csv, date range={'start': '2023-03-13', 'end': '2023-03-13'}
+Relevant Document 144, proc_AVGO-2023.csv, chunk index 3283, source_type=csv, date range={'start': '2023-03-14', 'end': '2023-03-14'}
+Relevant Document 145, proc_AMZN-2023.csv, chunk index 638, source_type=csv, date range={'start': '2023-03-14', 'end': '2023-03-14'}
+Relevant Document 146, proc_META-2023.csv, chunk index 5929, source_type=csv, date range={'start': '2023-03-14', 'end': '2023-03-14'}
+Relevant Document 147, proc_AVGO-2023.csv, chunk index 3284, source_type=csv, date range={'start': '2023-03-15', 'end': '2023-03-15'}
+Relevant Document 148, proc_AMZN-2023.csv, chunk index 639, source_type=csv, date range={'start': '2023-03-15', 'end': '2023-03-15'}
+Relevant Document 149, proc_META-2023.csv, chunk index 5930, source_type=csv, date range={'start': '2023-03-15', 'end': '2023-03-15'}
+Relevant Document 150, proc_AVGO-2023.csv, chunk index 3285, source_type=csv, date range={'start': '2023-03-16', 'end': '2023-03-16'}
+Relevant Document 151, proc_AMZN-2023.csv, chunk index 640, source_type=csv, date range={'start': '2023-03-16', 'end': '2023-03-16'}
+Relevant Document 152, proc_META-2023.csv, chunk index 5931, source_type=csv, date range={'start': '2023-03-16', 'end': '2023-03-16'}
+Relevant Document 153, proc_AVGO-2023.csv, chunk index 3286, source_type=csv, date range={'start': '2023-03-17', 'end': '2023-03-17'}
+Relevant Document 154, proc_AMZN-2023.csv, chunk index 641, source_type=csv, date range={'start': '2023-03-17', 'end': '2023-03-17'}
+Relevant Document 155, proc_META-2023.csv, chunk index 5932, source_type=csv, date range={'start': '2023-03-17', 'end': '2023-03-17'}
+Relevant Document 156, proc_AVGO-2023.csv, chunk index 3287, source_type=csv, date range={'start': '2023-03-20', 'end': '2023-03-20'}
+Relevant Document 157, proc_AMZN-2023.csv, chunk index 642, source_type=csv, date range={'start': '2023-03-20', 'end': '2023-03-20'}
+Relevant Document 158, proc_META-2023.csv, chunk index 5933, source_type=csv, date range={'start': '2023-03-20', 'end': '2023-03-20'}
+Relevant Document 159, proc_AVGO-2023.csv, chunk index 3288, source_type=csv, date range={'start': '2023-03-21', 'end': '2023-03-21'}
+Relevant Document 160, proc_AMZN-2023.csv, chunk index 643, source_type=csv, date range={'start': '2023-03-21', 'end': '2023-03-21'}
+Relevant Document 161, proc_META-2023.csv, chunk index 5934, source_type=csv, date range={'start': '2023-03-21', 'end': '2023-03-21'}
+Relevant Document 162, proc_AVGO-2023.csv, chunk index 3289, source_type=csv, date range={'start': '2023-03-22', 'end': '2023-03-22'}
+Relevant Document 163, proc_AMZN-2023.csv, chunk index 644, source_type=csv, date range={'start': '2023-03-22', 'end': '2023-03-22'}
+Relevant Document 164, proc_META-2023.csv, chunk index 5935, source_type=csv, date range={'start': '2023-03-22', 'end': '2023-03-22'}
+Relevant Document 165, proc_AVGO-2023.csv, chunk index 3290, source_type=csv, date range={'start': '2023-03-23', 'end': '2023-03-23'}
+Relevant Document 166, proc_AMZN-2023.csv, chunk index 645, source_type=csv, date range={'start': '2023-03-23', 'end': '2023-03-23'}
+Relevant Document 167, proc_META-2023.csv, chunk index 5936, source_type=csv, date range={'start': '2023-03-23', 'end': '2023-03-23'}
+Relevant Document 168, proc_AVGO-2023.csv, chunk index 3291, source_type=csv, date range={'start': '2023-03-24', 'end': '2023-03-24'}
+Relevant Document 169, proc_AMZN-2023.csv, chunk index 646, source_type=csv, date range={'start': '2023-03-24', 'end': '2023-03-24'}
+Relevant Document 170, proc_META-2023.csv, chunk index 5937, source_type=csv, date range={'start': '2023-03-24', 'end': '2023-03-24'}
+Relevant Document 171, proc_AVGO-2023.csv, chunk index 3292, source_type=csv, date range={'start': '2023-03-27', 'end': '2023-03-27'}
+Relevant Document 172, proc_AMZN-2023.csv, chunk index 647, source_type=csv, date range={'start': '2023-03-27', 'end': '2023-03-27'}
+Relevant Document 173, proc_META-2023.csv, chunk index 5938, source_type=csv, date range={'start': '2023-03-27', 'end': '2023-03-27'}
+Relevant Document 174, proc_AVGO-2023.csv, chunk index 3293, source_type=csv, date range={'start': '2023-03-28', 'end': '2023-03-28'}
+Relevant Document 175, proc_AMZN-2023.csv, chunk index 648, source_type=csv, date range={'start': '2023-03-28', 'end': '2023-03-28'}
+Relevant Document 176, proc_META-2023.csv, chunk index 5939, source_type=csv, date range={'start': '2023-03-28', 'end': '2023-03-28'}
+Relevant Document 177, proc_AVGO-2023.csv, chunk index 3294, source_type=csv, date range={'start': '2023-03-29', 'end': '2023-03-29'}
+Relevant Document 178, proc_AMZN-2023.csv, chunk index 649, source_type=csv, date range={'start': '2023-03-29', 'end': '2023-03-29'}
+Relevant Document 179, proc_META-2023.csv, chunk index 5940, source_type=csv, date range={'start': '2023-03-29', 'end': '2023-03-29'}
+Relevant Document 180, proc_AVGO-2023.csv, chunk index 3295, source_type=csv, date range={'start': '2023-03-30', 'end': '2023-03-30'}
+Relevant Document 181, proc_AMZN-2023.csv, chunk index 650, source_type=csv, date range={'start': '2023-03-30', 'end': '2023-03-30'}
+Relevant Document 182, proc_META-2023.csv, chunk index 5941, source_type=csv, date range={'start': '2023-03-30', 'end': '2023-03-30'}
+Relevant Document 183, proc_AVGO-2023.csv, chunk index 3296, source_type=csv, date range={'start': '2023-03-31', 'end': '2023-03-31'}
+Relevant Document 184, proc_AMZN-2023.csv, chunk index 651, source_type=csv, date range={'start': '2023-03-31', 'end': '2023-03-31'}
+Relevant Document 185, proc_META-2023.csv, chunk index 5942, source_type=csv, date range={'start': '2023-03-31', 'end': '2023-03-31'}
+Relevant Document 186, proc_AVGO-2023.csv, chunk index 3297, source_type=csv, date range={'start': '2023-04-03', 'end': '2023-04-03'}
+Relevant Document 187, proc_AMZN-2023.csv, chunk index 652, source_type=csv, date range={'start': '2023-04-03', 'end': '2023-04-03'}
+Relevant Document 188, proc_META-2023.csv, chunk index 5943, source_type=csv, date range={'start': '2023-04-03', 'end': '2023-04-03'}
+Relevant Document 189, proc_AVGO-2023.csv, chunk index 3298, source_type=csv, date range={'start': '2023-04-04', 'end': '2023-04-04'}
+Relevant Document 190, proc_AMZN-2023.csv, chunk index 653, source_type=csv, date range={'start': '2023-04-04', 'end': '2023-04-04'}
+Relevant Document 191, proc_META-2023.csv, chunk index 5944, source_type=csv, date range={'start': '2023-04-04', 'end': '2023-04-04'}
+Relevant Document 192, proc_AVGO-2023.csv, chunk index 3299, source_type=csv, date range={'start': '2023-04-05', 'end': '2023-04-05'}
+Relevant Document 193, proc_AMZN-2023.csv, chunk index 654, source_type=csv, date range={'start': '2023-04-05', 'end': '2023-04-05'}
+Relevant Document 194, proc_META-2023.csv, chunk index 5945, source_type=csv, date range={'start': '2023-04-05', 'end': '2023-04-05'}
+Relevant Document 195, proc_AVGO-2023.csv, chunk index 3300, source_type=csv, date range={'start': '2023-04-06', 'end': '2023-04-06'}
+Relevant Document 196, proc_AMZN-2023.csv, chunk index 655, source_type=csv, date range={'start': '2023-04-06', 'end': '2023-04-06'}
+Relevant Document 197, proc_META-2023.csv, chunk index 5946, source_type=csv, date range={'start': '2023-04-06', 'end': '2023-04-06'}
+Relevant Document 198, proc_AVGO-2023.csv, chunk index 3301, source_type=csv, date range={'start': '2023-04-10', 'end': '2023-04-10'}
+Relevant Document 199, proc_AMZN-2023.csv, chunk index 656, source_type=csv, date range={'start': '2023-04-10', 'end': '2023-04-10'}
+Relevant Document 200, proc_META-2023.csv, chunk index 5947, source_type=csv, date range={'start': '2023-04-10', 'end': '2023-04-10'}
+Relevant Document 201, proc_AVGO-2023.csv, chunk index 3302, source_type=csv, date range={'start': '2023-04-11', 'end': '2023-04-11'}
+Relevant Document 202, proc_AMZN-2023.csv, chunk index 657, source_type=csv, date range={'start': '2023-04-11', 'end': '2023-04-11'}
+Relevant Document 203, proc_META-2023.csv, chunk index 5948, source_type=csv, date range={'start': '2023-04-11', 'end': '2023-04-11'}
+Relevant Document 204, proc_AVGO-2023.csv, chunk index 3303, source_type=csv, date range={'start': '2023-04-12', 'end': '2023-04-12'}
+Relevant Document 205, proc_AMZN-2023.csv, chunk index 658, source_type=csv, date range={'start': '2023-04-12', 'end': '2023-04-12'}
+Relevant Document 206, proc_META-2023.csv, chunk index 5949, source_type=csv, date range={'start': '2023-04-12', 'end': '2023-04-12'}
+Relevant Document 207, proc_AVGO-2023.csv, chunk index 3304, source_type=csv, date range={'start': '2023-04-13', 'end': '2023-04-13'}
+Relevant Document 208, proc_AMZN-2023.csv, chunk index 659, source_type=csv, date range={'start': '2023-04-13', 'end': '2023-04-13'}
+Relevant Document 209, proc_META-2023.csv, chunk index 5950, source_type=csv, date range={'start': '2023-04-13', 'end': '2023-04-13'}
+Relevant Document 210, proc_AVGO-2023.csv, chunk index 3305, source_type=csv, date range={'start': '2023-04-14', 'end': '2023-04-14'}
+Relevant Document 211, proc_AMZN-2023.csv, chunk index 660, source_type=csv, date range={'start': '2023-04-14', 'end': '2023-04-14'}
+Relevant Document 212, proc_META-2023.csv, chunk index 5951, source_type=csv, date range={'start': '2023-04-14', 'end': '2023-04-14'}
+Relevant Document 213, proc_AVGO-2023.csv, chunk index 3306, source_type=csv, date range={'start': '2023-04-17', 'end': '2023-04-17'}
+Relevant Document 214, proc_AMZN-2023.csv, chunk index 661, source_type=csv, date range={'start': '2023-04-17', 'end': '2023-04-17'}
+Relevant Document 215, proc_META-2023.csv, chunk index 5952, source_type=csv, date range={'start': '2023-04-17', 'end': '2023-04-17'}
+Relevant Document 216, proc_AVGO-2023.csv, chunk index 3307, source_type=csv, date range={'start': '2023-04-18', 'end': '2023-04-18'}
+Relevant Document 217, proc_AMZN-2023.csv, chunk index 662, source_type=csv, date range={'start': '2023-04-18', 'end': '2023-04-18'}
+Relevant Document 218, proc_META-2023.csv, chunk index 5953, source_type=csv, date range={'start': '2023-04-18', 'end': '2023-04-18'}
+Relevant Document 219, proc_AVGO-2023.csv, chunk index 3308, source_type=csv, date range={'start': '2023-04-19', 'end': '2023-04-19'}
+Relevant Document 220, proc_AMZN-2023.csv, chunk index 663, source_type=csv, date range={'start': '2023-04-19', 'end': '2023-04-19'}
+Relevant Document 221, proc_META-2023.csv, chunk index 5954, source_type=csv, date range={'start': '2023-04-19', 'end': '2023-04-19'}
+Relevant Document 222, proc_AVGO-2023.csv, chunk index 3309, source_type=csv, date range={'start': '2023-04-20', 'end': '2023-04-20'}
+Relevant Document 223, proc_AMZN-2023.csv, chunk index 664, source_type=csv, date range={'start': '2023-04-20', 'end': '2023-04-20'}
+Relevant Document 224, proc_META-2023.csv, chunk index 5955, source_type=csv, date range={'start': '2023-04-20', 'end': '2023-04-20'}
+Relevant Document 225, proc_AVGO-2023.csv, chunk index 3310, source_type=csv, date range={'start': '2023-04-21', 'end': '2023-04-21'}
+Relevant Document 226, proc_AMZN-2023.csv, chunk index 665, source_type=csv, date range={'start': '2023-04-21', 'end': '2023-04-21'}
+Relevant Document 227, proc_META-2023.csv, chunk index 5956, source_type=csv, date range={'start': '2023-04-21', 'end': '2023-04-21'}
+Relevant Document 228, proc_AVGO-2023.csv, chunk index 3311, source_type=csv, date range={'start': '2023-04-24', 'end': '2023-04-24'}
+Relevant Document 229, proc_AMZN-2023.csv, chunk index 666, source_type=csv, date range={'start': '2023-04-24', 'end': '2023-04-24'}
+Relevant Document 230, proc_META-2023.csv, chunk index 5957, source_type=csv, date range={'start': '2023-04-24', 'end': '2023-04-24'}
+Relevant Document 231, proc_AVGO-2023.csv, chunk index 3312, source_type=csv, date range={'start': '2023-04-25', 'end': '2023-04-25'}
+Relevant Document 232, proc_AMZN-2023.csv, chunk index 667, source_type=csv, date range={'start': '2023-04-25', 'end': '2023-04-25'}
+Relevant Document 233, proc_META-2023.csv, chunk index 5958, source_type=csv, date range={'start': '2023-04-25', 'end': '2023-04-25'}
+Relevant Document 234, proc_AVGO-2023.csv, chunk index 3313, source_type=csv, date range={'start': '2023-04-26', 'end': '2023-04-26'}
+Relevant Document 235, proc_AMZN-2023.csv, chunk index 668, source_type=csv, date range={'start': '2023-04-26', 'end': '2023-04-26'}
+Relevant Document 236, proc_META-2023.csv, chunk index 5959, source_type=csv, date range={'start': '2023-04-26', 'end': '2023-04-26'}
+Relevant Document 237, proc_AVGO-2023.csv, chunk index 3314, source_type=csv, date range={'start': '2023-04-27', 'end': '2023-04-27'}
+Relevant Document 238, proc_AMZN-2023.csv, chunk index 669, source_type=csv, date range={'start': '2023-04-27', 'end': '2023-04-27'}
+Relevant Document 239, proc_META-2023.csv, chunk index 5960, source_type=csv, date range={'start': '2023-04-27', 'end': '2023-04-27'}
+Relevant Document 240, proc_AVGO-2023.csv, chunk index 3315, source_type=csv, date range={'start': '2023-04-28', 'end': '2023-04-28'}
+Relevant Document 241, proc_AMZN-2023.csv, chunk index 670, source_type=csv, date range={'start': '2023-04-28', 'end': '2023-04-28'}
+Relevant Document 242, proc_META-2023.csv, chunk index 5961, source_type=csv, date range={'start': '2023-04-28', 'end': '2023-04-28'}
+Relevant Document 243, proc_AVGO-2023.csv, chunk index 3316, source_type=csv, date range={'start': '2023-05-01', 'end': '2023-05-01'}
+Relevant Document 244, proc_AMZN-2023.csv, chunk index 671, source_type=csv, date range={'start': '2023-05-01', 'end': '2023-05-01'}
+Relevant Document 245, proc_META-2023.csv, chunk index 5962, source_type=csv, date range={'start': '2023-05-01', 'end': '2023-05-01'}
+Relevant Document 246, proc_AVGO-2023.csv, chunk index 3317, source_type=csv, date range={'start': '2023-05-02', 'end': '2023-05-02'}
+Relevant Document 247, proc_AMZN-2023.csv, chunk index 672, source_type=csv, date range={'start': '2023-05-02', 'end': '2023-05-02'}
+Relevant Document 248, proc_META-2023.csv, chunk index 5963, source_type=csv, date range={'start': '2023-05-02', 'end': '2023-05-02'}
+Relevant Document 249, proc_AVGO-2023.csv, chunk index 3318, source_type=csv, date range={'start': '2023-05-03', 'end': '2023-05-03'}
+Relevant Document 250, proc_AMZN-2023.csv, chunk index 673, source_type=csv, date range={'start': '2023-05-03', 'end': '2023-05-03'}
+Relevant Document 251, proc_META-2023.csv, chunk index 5964, source_type=csv, date range={'start': '2023-05-03', 'end': '2023-05-03'}
+Relevant Document 252, proc_AVGO-2023.csv, chunk index 3319, source_type=csv, date range={'start': '2023-05-04', 'end': '2023-05-04'}
+Relevant Document 253, proc_AMZN-2023.csv, chunk index 674, source_type=csv, date range={'start': '2023-05-04', 'end': '2023-05-04'}
+Relevant Document 254, proc_META-2023.csv, chunk index 5965, source_type=csv, date range={'start': '2023-05-04', 'end': '2023-05-04'}
+Relevant Document 255, proc_AVGO-2023.csv, chunk index 3320, source_type=csv, date range={'start': '2023-05-05', 'end': '2023-05-05'}
+Relevant Document 256, proc_AMZN-2023.csv, chunk index 675, source_type=csv, date range={'start': '2023-05-05', 'end': '2023-05-05'}
+Relevant Document 257, proc_META-2023.csv, chunk index 5966, source_type=csv, date range={'start': '2023-05-05', 'end': '2023-05-05'}
+Relevant Document 258, proc_AVGO-2023.csv, chunk index 3321, source_type=csv, date range={'start': '2023-05-08', 'end': '2023-05-08'}
+Relevant Document 259, proc_AMZN-2023.csv, chunk index 676, source_type=csv, date range={'start': '2023-05-08', 'end': '2023-05-08'}
+Relevant Document 260, proc_META-2023.csv, chunk index 5967, source_type=csv, date range={'start': '2023-05-08', 'end': '2023-05-08'}
+Relevant Document 261, proc_AVGO-2023.csv, chunk index 3322, source_type=csv, date range={'start': '2023-05-09', 'end': '2023-05-09'}
+Relevant Document 262, proc_AMZN-2023.csv, chunk index 677, source_type=csv, date range={'start': '2023-05-09', 'end': '2023-05-09'}
+Relevant Document 263, proc_META-2023.csv, chunk index 5968, source_type=csv, date range={'start': '2023-05-09', 'end': '2023-05-09'}
+Relevant Document 264, proc_AVGO-2023.csv, chunk index 3323, source_type=csv, date range={'start': '2023-05-10', 'end': '2023-05-10'}
+Relevant Document 265, proc_AMZN-2023.csv, chunk index 678, source_type=csv, date range={'start': '2023-05-10', 'end': '2023-05-10'}
+Relevant Document 266, proc_META-2023.csv, chunk index 5969, source_type=csv, date range={'start': '2023-05-10', 'end': '2023-05-10'}
+Relevant Document 267, proc_AVGO-2023.csv, chunk index 3324, source_type=csv, date range={'start': '2023-05-11', 'end': '2023-05-11'}
+Relevant Document 268, proc_AMZN-2023.csv, chunk index 679, source_type=csv, date range={'start': '2023-05-11', 'end': '2023-05-11'}
+Relevant Document 269, proc_META-2023.csv, chunk index 5970, source_type=csv, date range={'start': '2023-05-11', 'end': '2023-05-11'}
+Relevant Document 270, proc_AVGO-2023.csv, chunk index 3325, source_type=csv, date range={'start': '2023-05-12', 'end': '2023-05-12'}
+Relevant Document 271, proc_AMZN-2023.csv, chunk index 680, source_type=csv, date range={'start': '2023-05-12', 'end': '2023-05-12'}
+Relevant Document 272, proc_META-2023.csv, chunk index 5971, source_type=csv, date range={'start': '2023-05-12', 'end': '2023-05-12'}
+Relevant Document 273, proc_AVGO-2023.csv, chunk index 3326, source_type=csv, date range={'start': '2023-05-15', 'end': '2023-05-15'}
+Relevant Document 274, proc_AMZN-2023.csv, chunk index 681, source_type=csv, date range={'start': '2023-05-15', 'end': '2023-05-15'}
+Relevant Document 275, proc_META-2023.csv, chunk index 5972, source_type=csv, date range={'start': '2023-05-15', 'end': '2023-05-15'}
+Relevant Document 276, proc_AVGO-2023.csv, chunk index 3327, source_type=csv, date range={'start': '2023-05-16', 'end': '2023-05-16'}
+Relevant Document 277, proc_AMZN-2023.csv, chunk index 682, source_type=csv, date range={'start': '2023-05-16', 'end': '2023-05-16'}
+Relevant Document 278, proc_META-2023.csv, chunk index 5973, source_type=csv, date range={'start': '2023-05-16', 'end': '2023-05-16'}
+Relevant Document 279, proc_AVGO-2023.csv, chunk index 3328, source_type=csv, date range={'start': '2023-05-17', 'end': '2023-05-17'}
+Relevant Document 280, proc_AMZN-2023.csv, chunk index 683, source_type=csv, date range={'start': '2023-05-17', 'end': '2023-05-17'}
+Relevant Document 281, proc_META-2023.csv, chunk index 5974, source_type=csv, date range={'start': '2023-05-17', 'end': '2023-05-17'}
+Relevant Document 282, proc_AVGO-2023.csv, chunk index 3329, source_type=csv, date range={'start': '2023-05-18', 'end': '2023-05-18'}
+Relevant Document 283, proc_AMZN-2023.csv, chunk index 684, source_type=csv, date range={'start': '2023-05-18', 'end': '2023-05-18'}
+Relevant Document 284, proc_META-2023.csv, chunk index 5975, source_type=csv, date range={'start': '2023-05-18', 'end': '2023-05-18'}
+Relevant Document 285, proc_AVGO-2023.csv, chunk index 3330, source_type=csv, date range={'start': '2023-05-19', 'end': '2023-05-19'}
+Relevant Document 286, proc_AMZN-2023.csv, chunk index 685, source_type=csv, date range={'start': '2023-05-19', 'end': '2023-05-19'}
+Relevant Document 287, proc_META-2023.csv, chunk index 5976, source_type=csv, date range={'start': '2023-05-19', 'end': '2023-05-19'}
+Relevant Document 288, proc_AVGO-2023.csv, chunk index 3331, source_type=csv, date range={'start': '2023-05-22', 'end': '2023-05-22'}
+Relevant Document 289, proc_AMZN-2023.csv, chunk index 686, source_type=csv, date range={'start': '2023-05-22', 'end': '2023-05-22'}
+Relevant Document 290, proc_META-2023.csv, chunk index 5977, source_type=csv, date range={'start': '2023-05-22', 'end': '2023-05-22'}
+Relevant Document 291, proc_AVGO-2023.csv, chunk index 3332, source_type=csv, date range={'start': '2023-05-23', 'end': '2023-05-23'}
+Relevant Document 292, proc_AMZN-2023.csv, chunk index 687, source_type=csv, date range={'start': '2023-05-23', 'end': '2023-05-23'}
+Relevant Document 293, proc_META-2023.csv, chunk index 5978, source_type=csv, date range={'start': '2023-05-23', 'end': '2023-05-23'}
+Relevant Document 294, proc_AVGO-2023.csv, chunk index 3333, source_type=csv, date range={'start': '2023-05-24', 'end': '2023-05-24'}
+Relevant Document 295, proc_AMZN-2023.csv, chunk index 688, source_type=csv, date range={'start': '2023-05-24', 'end': '2023-05-24'}
+Relevant Document 296, proc_META-2023.csv, chunk index 5979, source_type=csv, date range={'start': '2023-05-24', 'end': '2023-05-24'}
+Relevant Document 297, proc_AVGO-2023.csv, chunk index 3334, source_type=csv, date range={'start': '2023-05-25', 'end': '2023-05-25'}
+Relevant Document 298, proc_AMZN-2023.csv, chunk index 689, source_type=csv, date range={'start': '2023-05-25', 'end': '2023-05-25'}
+Relevant Document 299, proc_META-2023.csv, chunk index 5980, source_type=csv, date range={'start': '2023-05-25', 'end': '2023-05-25'}
+Relevant Document 300, proc_AVGO-2023.csv, chunk index 3335, source_type=csv, date range={'start': '2023-05-26', 'end': '2023-05-26'}
+Relevant Document 301, proc_AMZN-2023.csv, chunk index 690, source_type=csv, date range={'start': '2023-05-26', 'end': '2023-05-26'}
+Relevant Document 302, proc_META-2023.csv, chunk index 5981, source_type=csv, date range={'start': '2023-05-26', 'end': '2023-05-26'}
+Relevant Document 303, proc_AVGO-2023.csv, chunk index 3336, source_type=csv, date range={'start': '2023-05-30', 'end': '2023-05-30'}
+Relevant Document 304, proc_AMZN-2023.csv, chunk index 691, source_type=csv, date range={'start': '2023-05-30', 'end': '2023-05-30'}
+Relevant Document 305, proc_META-2023.csv, chunk index 5982, source_type=csv, date range={'start': '2023-05-30', 'end': '2023-05-30'}
+Relevant Document 306, proc_AVGO-2023.csv, chunk index 3337, source_type=csv, date range={'start': '2023-05-31', 'end': '2023-05-31'}
+Relevant Document 307, proc_AMZN-2023.csv, chunk index 692, source_type=csv, date range={'start': '2023-05-31', 'end': '2023-05-31'}
+Relevant Document 308, proc_META-2023.csv, chunk index 5983, source_type=csv, date range={'start': '2023-05-31', 'end': '2023-05-31'}
+Relevant Document 309, proc_AVGO-2023.csv, chunk index 3338, source_type=csv, date range={'start': '2023-06-01', 'end': '2023-06-01'}
+Relevant Document 310, proc_AMZN-2023.csv, chunk index 693, source_type=csv, date range={'start': '2023-06-01', 'end': '2023-06-01'}
+Relevant Document 311, proc_META-2023.csv, chunk index 5984, source_type=csv, date range={'start': '2023-06-01', 'end': '2023-06-01'}
+Relevant Document 312, proc_AVGO-2023.csv, chunk index 3339, source_type=csv, date range={'start': '2023-06-02', 'end': '2023-06-02'}
+Relevant Document 313, proc_AMZN-2023.csv, chunk index 694, source_type=csv, date range={'start': '2023-06-02', 'end': '2023-06-02'}
+Relevant Document 314, proc_META-2023.csv, chunk index 5985, source_type=csv, date range={'start': '2023-06-02', 'end': '2023-06-02'}
+Relevant Document 315, proc_AVGO-2023.csv, chunk index 3340, source_type=csv, date range={'start': '2023-06-05', 'end': '2023-06-05'}
+Relevant Document 316, proc_AMZN-2023.csv, chunk index 695, source_type=csv, date range={'start': '2023-06-05', 'end': '2023-06-05'}
+Relevant Document 317, proc_META-2023.csv, chunk index 5986, source_type=csv, date range={'start': '2023-06-05', 'end': '2023-06-05'}
+Relevant Document 318, proc_AVGO-2023.csv, chunk index 3341, source_type=csv, date range={'start': '2023-06-06', 'end': '2023-06-06'}
+Relevant Document 319, proc_AMZN-2023.csv, chunk index 696, source_type=csv, date range={'start': '2023-06-06', 'end': '2023-06-06'}
+Relevant Document 320, proc_META-2023.csv, chunk index 5987, source_type=csv, date range={'start': '2023-06-06', 'end': '2023-06-06'}
+Relevant Document 321, proc_AVGO-2023.csv, chunk index 3342, source_type=csv, date range={'start': '2023-06-07', 'end': '2023-06-07'}
+Relevant Document 322, proc_AMZN-2023.csv, chunk index 697, source_type=csv, date range={'start': '2023-06-07', 'end': '2023-06-07'}
+Relevant Document 323, proc_META-2023.csv, chunk index 5988, source_type=csv, date range={'start': '2023-06-07', 'end': '2023-06-07'}
+Relevant Document 324, proc_AVGO-2023.csv, chunk index 3343, source_type=csv, date range={'start': '2023-06-08', 'end': '2023-06-08'}
+Relevant Document 325, proc_AMZN-2023.csv, chunk index 698, source_type=csv, date range={'start': '2023-06-08', 'end': '2023-06-08'}
+Relevant Document 326, proc_META-2023.csv, chunk index 5989, source_type=csv, date range={'start': '2023-06-08', 'end': '2023-06-08'}
+Relevant Document 327, proc_AVGO-2023.csv, chunk index 3344, source_type=csv, date range={'start': '2023-06-09', 'end': '2023-06-09'}
+Relevant Document 328, proc_AMZN-2023.csv, chunk index 699, source_type=csv, date range={'start': '2023-06-09', 'end': '2023-06-09'}
+Relevant Document 329, proc_META-2023.csv, chunk index 5990, source_type=csv, date range={'start': '2023-06-09', 'end': '2023-06-09'}
+Relevant Document 330, proc_AVGO-2023.csv, chunk index 3345, source_type=csv, date range={'start': '2023-06-12', 'end': '2023-06-12'}
+Relevant Document 331, proc_AMZN-2023.csv, chunk index 700, source_type=csv, date range={'start': '2023-06-12', 'end': '2023-06-12'}
+Relevant Document 332, proc_META-2023.csv, chunk index 5991, source_type=csv, date range={'start': '2023-06-12', 'end': '2023-06-12'}
+Relevant Document 333, proc_AVGO-2023.csv, chunk index 3346, source_type=csv, date range={'start': '2023-06-13', 'end': '2023-06-13'}
+Relevant Document 334, proc_AMZN-2023.csv, chunk index 701, source_type=csv, date range={'start': '2023-06-13', 'end': '2023-06-13'}
+Relevant Document 335, proc_META-2023.csv, chunk index 5992, source_type=csv, date range={'start': '2023-06-13', 'end': '2023-06-13'}
+Relevant Document 336, proc_AVGO-2023.csv, chunk index 3347, source_type=csv, date range={'start': '2023-06-14', 'end': '2023-06-14'}
+Relevant Document 337, proc_AMZN-2023.csv, chunk index 702, source_type=csv, date range={'start': '2023-06-14', 'end': '2023-06-14'}
+Relevant Document 338, proc_META-2023.csv, chunk index 5993, source_type=csv, date range={'start': '2023-06-14', 'end': '2023-06-14'}
+Relevant Document 339, proc_AVGO-2023.csv, chunk index 3348, source_type=csv, date range={'start': '2023-06-15', 'end': '2023-06-15'}
+Relevant Document 340, proc_AMZN-2023.csv, chunk index 703, source_type=csv, date range={'start': '2023-06-15', 'end': '2023-06-15'}
+Relevant Document 341, proc_META-2023.csv, chunk index 5994, source_type=csv, date range={'start': '2023-06-15', 'end': '2023-06-15'}
+Relevant Document 342, proc_AVGO-2023.csv, chunk index 3349, source_type=csv, date range={'start': '2023-06-16', 'end': '2023-06-16'}
+Relevant Document 343, proc_AMZN-2023.csv, chunk index 704, source_type=csv, date range={'start': '2023-06-16', 'end': '2023-06-16'}
+Relevant Document 344, proc_META-2023.csv, chunk index 5995, source_type=csv, date range={'start': '2023-06-16', 'end': '2023-06-16'}
+Relevant Document 345, proc_AVGO-2023.csv, chunk index 3350, source_type=csv, date range={'start': '2023-06-20', 'end': '2023-06-20'}
+Relevant Document 346, proc_AMZN-2023.csv, chunk index 705, source_type=csv, date range={'start': '2023-06-20', 'end': '2023-06-20'}
+Relevant Document 347, proc_META-2023.csv, chunk index 5996, source_type=csv, date range={'start': '2023-06-20', 'end': '2023-06-20'}
+Relevant Document 348, proc_AVGO-2023.csv, chunk index 3351, source_type=csv, date range={'start': '2023-06-21', 'end': '2023-06-21'}
+Relevant Document 349, proc_AMZN-2023.csv, chunk index 706, source_type=csv, date range={'start': '2023-06-21', 'end': '2023-06-21'}
+Relevant Document 350, proc_META-2023.csv, chunk index 5997, source_type=csv, date range={'start': '2023-06-21', 'end': '2023-06-21'}
+Relevant Document 351, proc_AVGO-2023.csv, chunk index 3352, source_type=csv, date range={'start': '2023-06-22', 'end': '2023-06-22'}
+Relevant Document 352, proc_AMZN-2023.csv, chunk index 707, source_type=csv, date range={'start': '2023-06-22', 'end': '2023-06-22'}
+Relevant Document 353, proc_META-2023.csv, chunk index 5998, source_type=csv, date range={'start': '2023-06-22', 'end': '2023-06-22'}
+Relevant Document 354, proc_AVGO-2023.csv, chunk index 3353, source_type=csv, date range={'start': '2023-06-23', 'end': '2023-06-23'}
+Relevant Document 355, proc_AMZN-2023.csv, chunk index 708, source_type=csv, date range={'start': '2023-06-23', 'end': '2023-06-23'}
+Relevant Document 356, proc_META-2023.csv, chunk index 5999, source_type=csv, date range={'start': '2023-06-23', 'end': '2023-06-23'}
+Relevant Document 357, proc_AVGO-2023.csv, chunk index 3354, source_type=csv, date range={'start': '2023-06-26', 'end': '2023-06-26'}
+Relevant Document 358, proc_AMZN-2023.csv, chunk index 709, source_type=csv, date range={'start': '2023-06-26', 'end': '2023-06-26'}
+Relevant Document 359, proc_META-2023.csv, chunk index 6000, source_type=csv, date range={'start': '2023-06-26', 'end': '2023-06-26'}
+Relevant Document 360, proc_AVGO-2023.csv, chunk index 3355, source_type=csv, date range={'start': '2023-06-27', 'end': '2023-06-27'}
+Relevant Document 361, proc_AMZN-2023.csv, chunk index 710, source_type=csv, date range={'start': '2023-06-27', 'end': '2023-06-27'}
+Relevant Document 362, proc_META-2023.csv, chunk index 6001, source_type=csv, date range={'start': '2023-06-27', 'end': '2023-06-27'}
+Relevant Document 363, proc_AVGO-2023.csv, chunk index 3356, source_type=csv, date range={'start': '2023-06-28', 'end': '2023-06-28'}
+Relevant Document 364, proc_AMZN-2023.csv, chunk index 711, source_type=csv, date range={'start': '2023-06-28', 'end': '2023-06-28'}
+Relevant Document 365, proc_META-2023.csv, chunk index 6002, source_type=csv, date range={'start': '2023-06-28', 'end': '2023-06-28'}
+Relevant Document 366, proc_AVGO-2023.csv, chunk index 3357, source_type=csv, date range={'start': '2023-06-29', 'end': '2023-06-29'}
+Relevant Document 367, proc_AMZN-2023.csv, chunk index 712, source_type=csv, date range={'start': '2023-06-29', 'end': '2023-06-29'}
+Relevant Document 368, proc_META-2023.csv, chunk index 6003, source_type=csv, date range={'start': '2023-06-29', 'end': '2023-06-29'}
+Relevant Document 369, proc_AVGO-2023.csv, chunk index 3358, source_type=csv, date range={'start': '2023-06-30', 'end': '2023-06-30'}
+Relevant Document 370, proc_AMZN-2023.csv, chunk index 713, source_type=csv, date range={'start': '2023-06-30', 'end': '2023-06-30'}
+Relevant Document 371, proc_META-2023.csv, chunk index 6004, source_type=csv, date range={'start': '2023-06-30', 'end': '2023-06-30'}
+Relevant Document 372, proc_AMZN-2023.csv, chunk index 714, source_type=csv, date range={'start': '2023-07-03', 'end': '2023-07-03'}
+Relevant Document 373, proc_AVGO-2023.csv, chunk index 3359, source_type=csv, date range={'start': '2023-07-03', 'end': '2023-07-03'}
+Relevant Document 374, proc_META-2023.csv, chunk index 6005, source_type=csv, date range={'start': '2023-07-03', 'end': '2023-07-03'}
+Relevant Document 375, proc_AVGO-2023.csv, chunk index 3360, source_type=csv, date range={'start': '2023-07-05', 'end': '2023-07-05'}
+Relevant Document 376, proc_AMZN-2023.csv, chunk index 715, source_type=csv, date range={'start': '2023-07-05', 'end': '2023-07-05'}
+Relevant Document 377, proc_META-2023.csv, chunk index 6006, source_type=csv, date range={'start': '2023-07-05', 'end': '2023-07-05'}
+Relevant Document 378, proc_AVGO-2023.csv, chunk index 3361, source_type=csv, date range={'start': '2023-07-06', 'end': '2023-07-06'}
+Relevant Document 379, proc_AMZN-2023.csv, chunk index 716, source_type=csv, date range={'start': '2023-07-06', 'end': '2023-07-06'}
+Relevant Document 380, proc_META-2023.csv, chunk index 6007, source_type=csv, date range={'start': '2023-07-06', 'end': '2023-07-06'}
+Relevant Document 381, proc_AVGO-2023.csv, chunk index 3362, source_type=csv, date range={'start': '2023-07-07', 'end': '2023-07-07'}
+Relevant Document 382, proc_AMZN-2023.csv, chunk index 717, source_type=csv, date range={'start': '2023-07-07', 'end': '2023-07-07'}
+Relevant Document 383, proc_META-2023.csv, chunk index 6008, source_type=csv, date range={'start': '2023-07-07', 'end': '2023-07-07'}
+Relevant Document 384, proc_AVGO-2023.csv, chunk index 3363, source_type=csv, date range={'start': '2023-07-10', 'end': '2023-07-10'}
+Relevant Document 385, proc_AMZN-2023.csv, chunk index 718, source_type=csv, date range={'start': '2023-07-10', 'end': '2023-07-10'}
+Relevant Document 386, proc_META-2023.csv, chunk index 6009, source_type=csv, date range={'start': '2023-07-10', 'end': '2023-07-10'}
+Relevant Document 387, proc_AVGO-2023.csv, chunk index 3364, source_type=csv, date range={'start': '2023-07-11', 'end': '2023-07-11'}
+Relevant Document 388, proc_AMZN-2023.csv, chunk index 719, source_type=csv, date range={'start': '2023-07-11', 'end': '2023-07-11'}
+Relevant Document 389, proc_META-2023.csv, chunk index 6010, source_type=csv, date range={'start': '2023-07-11', 'end': '2023-07-11'}
+Relevant Document 390, proc_AVGO-2023.csv, chunk index 3365, source_type=csv, date range={'start': '2023-07-12', 'end': '2023-07-12'}
+Relevant Document 391, proc_AMZN-2023.csv, chunk index 720, source_type=csv, date range={'start': '2023-07-12', 'end': '2023-07-12'}
+Relevant Document 392, proc_META-2023.csv, chunk index 6011, source_type=csv, date range={'start': '2023-07-12', 'end': '2023-07-12'}
+Relevant Document 393, proc_AVGO-2023.csv, chunk index 3366, source_type=csv, date range={'start': '2023-07-13', 'end': '2023-07-13'}
+Relevant Document 394, proc_AMZN-2023.csv, chunk index 721, source_type=csv, date range={'start': '2023-07-13', 'end': '2023-07-13'}
+Relevant Document 395, proc_META-2023.csv, chunk index 6012, source_type=csv, date range={'start': '2023-07-13', 'end': '2023-07-13'}
+Relevant Document 396, proc_AVGO-2023.csv, chunk index 3367, source_type=csv, date range={'start': '2023-07-14', 'end': '2023-07-14'}
+Relevant Document 397, proc_AMZN-2023.csv, chunk index 722, source_type=csv, date range={'start': '2023-07-14', 'end': '2023-07-14'}
+Relevant Document 398, proc_META-2023.csv, chunk index 6013, source_type=csv, date range={'start': '2023-07-14', 'end': '2023-07-14'}
+Relevant Document 399, proc_AMZN-2023.csv, chunk index 723, source_type=csv, date range={'start': '2023-07-17', 'end': '2023-07-17'}
+Relevant Document 400, proc_AVGO-2023.csv, chunk index 3368, source_type=csv, date range={'start': '2023-07-17', 'end': '2023-07-17'}
+Relevant Document 401, proc_META-2023.csv, chunk index 6014, source_type=csv, date range={'start': '2023-07-17', 'end': '2023-07-17'}
+Relevant Document 402, proc_AMZN-2023.csv, chunk index 724, source_type=csv, date range={'start': '2023-07-18', 'end': '2023-07-18'}
+Relevant Document 403, proc_AVGO-2023.csv, chunk index 3369, source_type=csv, date range={'start': '2023-07-18', 'end': '2023-07-18'}
+Relevant Document 404, proc_META-2023.csv, chunk index 6015, source_type=csv, date range={'start': '2023-07-18', 'end': '2023-07-18'}
+Relevant Document 405, proc_AVGO-2023.csv, chunk index 3370, source_type=csv, date range={'start': '2023-07-19', 'end': '2023-07-19'}
+Relevant Document 406, proc_AMZN-2023.csv, chunk index 725, source_type=csv, date range={'start': '2023-07-19', 'end': '2023-07-19'}
+Relevant Document 407, proc_META-2023.csv, chunk index 6016, source_type=csv, date range={'start': '2023-07-19', 'end': '2023-07-19'}
+Relevant Document 408, proc_AVGO-2023.csv, chunk index 3371, source_type=csv, date range={'start': '2023-07-20', 'end': '2023-07-20'}
+Relevant Document 409, proc_AMZN-2023.csv, chunk index 726, source_type=csv, date range={'start': '2023-07-20', 'end': '2023-07-20'}
+Relevant Document 410, proc_META-2023.csv, chunk index 6017, source_type=csv, date range={'start': '2023-07-20', 'end': '2023-07-20'}
+Relevant Document 411, proc_AVGO-2023.csv, chunk index 3372, source_type=csv, date range={'start': '2023-07-21', 'end': '2023-07-21'}
+Relevant Document 412, proc_AMZN-2023.csv, chunk index 727, source_type=csv, date range={'start': '2023-07-21', 'end': '2023-07-21'}
+Relevant Document 413, proc_META-2023.csv, chunk index 6018, source_type=csv, date range={'start': '2023-07-21', 'end': '2023-07-21'}
+Relevant Document 414, proc_AVGO-2023.csv, chunk index 3373, source_type=csv, date range={'start': '2023-07-24', 'end': '2023-07-24'}
+Relevant Document 415, proc_AMZN-2023.csv, chunk index 728, source_type=csv, date range={'start': '2023-07-24', 'end': '2023-07-24'}
+Relevant Document 416, proc_META-2023.csv, chunk index 6019, source_type=csv, date range={'start': '2023-07-24', 'end': '2023-07-24'}
+Relevant Document 417, proc_AVGO-2023.csv, chunk index 3374, source_type=csv, date range={'start': '2023-07-25', 'end': '2023-07-25'}
+Relevant Document 418, proc_AMZN-2023.csv, chunk index 729, source_type=csv, date range={'start': '2023-07-25', 'end': '2023-07-25'}
+Relevant Document 419, proc_META-2023.csv, chunk index 6020, source_type=csv, date range={'start': '2023-07-25', 'end': '2023-07-25'}
+Relevant Document 420, proc_AVGO-2023.csv, chunk index 3375, source_type=csv, date range={'start': '2023-07-26', 'end': '2023-07-26'}
+Relevant Document 421, proc_AMZN-2023.csv, chunk index 730, source_type=csv, date range={'start': '2023-07-26', 'end': '2023-07-26'}
+Relevant Document 422, proc_META-2023.csv, chunk index 6021, source_type=csv, date range={'start': '2023-07-26', 'end': '2023-07-26'}
+Relevant Document 423, proc_AMZN-2023.csv, chunk index 731, source_type=csv, date range={'start': '2023-07-27', 'end': '2023-07-27'}
+Relevant Document 424, proc_AVGO-2023.csv, chunk index 3376, source_type=csv, date range={'start': '2023-07-27', 'end': '2023-07-27'}
+Relevant Document 425, proc_META-2023.csv, chunk index 6022, source_type=csv, date range={'start': '2023-07-27', 'end': '2023-07-27'}
+Relevant Document 426, proc_AVGO-2023.csv, chunk index 3377, source_type=csv, date range={'start': '2023-07-28', 'end': '2023-07-28'}
+Relevant Document 427, proc_AMZN-2023.csv, chunk index 732, source_type=csv, date range={'start': '2023-07-28', 'end': '2023-07-28'}
+Relevant Document 428, proc_META-2023.csv, chunk index 6023, source_type=csv, date range={'start': '2023-07-28', 'end': '2023-07-28'}
+Relevant Document 429, proc_AVGO-2023.csv, chunk index 3378, source_type=csv, date range={'start': '2023-07-31', 'end': '2023-07-31'}
+Relevant Document 430, proc_AMZN-2023.csv, chunk index 733, source_type=csv, date range={'start': '2023-07-31', 'end': '2023-07-31'}
+Relevant Document 431, proc_META-2023.csv, chunk index 6024, source_type=csv, date range={'start': '2023-07-31', 'end': '2023-07-31'}
+Relevant Document 432, proc_AMZN-2023.csv, chunk index 734, source_type=csv, date range={'start': '2023-08-01', 'end': '2023-08-01'}
+Relevant Document 433, proc_AVGO-2023.csv, chunk index 3379, source_type=csv, date range={'start': '2023-08-01', 'end': '2023-08-01'}
+Relevant Document 434, proc_META-2023.csv, chunk index 6025, source_type=csv, date range={'start': '2023-08-01', 'end': '2023-08-01'}
+Relevant Document 435, proc_AVGO-2023.csv, chunk index 3380, source_type=csv, date range={'start': '2023-08-02', 'end': '2023-08-02'}
+Relevant Document 436, proc_AMZN-2023.csv, chunk index 735, source_type=csv, date range={'start': '2023-08-02', 'end': '2023-08-02'}
+Relevant Document 437, proc_META-2023.csv, chunk index 6026, source_type=csv, date range={'start': '2023-08-02', 'end': '2023-08-02'}
+Relevant Document 438, proc_AVGO-2023.csv, chunk index 3381, source_type=csv, date range={'start': '2023-08-03', 'end': '2023-08-03'}
+Relevant Document 439, proc_AMZN-2023.csv, chunk index 736, source_type=csv, date range={'start': '2023-08-03', 'end': '2023-08-03'}
+Relevant Document 440, proc_META-2023.csv, chunk index 6027, source_type=csv, date range={'start': '2023-08-03', 'end': '2023-08-03'}
+Relevant Document 441, proc_AVGO-2023.csv, chunk index 3382, source_type=csv, date range={'start': '2023-08-04', 'end': '2023-08-04'}
+Relevant Document 442, proc_AMZN-2023.csv, chunk index 737, source_type=csv, date range={'start': '2023-08-04', 'end': '2023-08-04'}
+Relevant Document 443, proc_META-2023.csv, chunk index 6028, source_type=csv, date range={'start': '2023-08-04', 'end': '2023-08-04'}
+Relevant Document 444, proc_AVGO-2023.csv, chunk index 3383, source_type=csv, date range={'start': '2023-08-07', 'end': '2023-08-07'}
+Relevant Document 445, proc_AMZN-2023.csv, chunk index 738, source_type=csv, date range={'start': '2023-08-07', 'end': '2023-08-07'}
+Relevant Document 446, proc_META-2023.csv, chunk index 6029, source_type=csv, date range={'start': '2023-08-07', 'end': '2023-08-07'}
+Relevant Document 447, proc_AVGO-2023.csv, chunk index 3384, source_type=csv, date range={'start': '2023-08-08', 'end': '2023-08-08'}
+Relevant Document 448, proc_AMZN-2023.csv, chunk index 739, source_type=csv, date range={'start': '2023-08-08', 'end': '2023-08-08'}
+Relevant Document 449, proc_META-2023.csv, chunk index 6030, source_type=csv, date range={'start': '2023-08-08', 'end': '2023-08-08'}
+Relevant Document 450, proc_AVGO-2023.csv, chunk index 3385, source_type=csv, date range={'start': '2023-08-09', 'end': '2023-08-09'}
+Relevant Document 451, proc_AMZN-2023.csv, chunk index 740, source_type=csv, date range={'start': '2023-08-09', 'end': '2023-08-09'}
+Relevant Document 452, proc_META-2023.csv, chunk index 6031, source_type=csv, date range={'start': '2023-08-09', 'end': '2023-08-09'}
+Relevant Document 453, proc_AVGO-2023.csv, chunk index 3386, source_type=csv, date range={'start': '2023-08-10', 'end': '2023-08-10'}
+Relevant Document 454, proc_AMZN-2023.csv, chunk index 741, source_type=csv, date range={'start': '2023-08-10', 'end': '2023-08-10'}
+Relevant Document 455, proc_META-2023.csv, chunk index 6032, source_type=csv, date range={'start': '2023-08-10', 'end': '2023-08-10'}
+Relevant Document 456, proc_AVGO-2023.csv, chunk index 3387, source_type=csv, date range={'start': '2023-08-11', 'end': '2023-08-11'}
+Relevant Document 457, proc_AMZN-2023.csv, chunk index 742, source_type=csv, date range={'start': '2023-08-11', 'end': '2023-08-11'}
+Relevant Document 458, proc_META-2023.csv, chunk index 6033, source_type=csv, date range={'start': '2023-08-11', 'end': '2023-08-11'}
+Relevant Document 459, proc_AVGO-2023.csv, chunk index 3388, source_type=csv, date range={'start': '2023-08-14', 'end': '2023-08-14'}
+Relevant Document 460, proc_AMZN-2023.csv, chunk index 743, source_type=csv, date range={'start': '2023-08-14', 'end': '2023-08-14'}
+Relevant Document 461, proc_META-2023.csv, chunk index 6034, source_type=csv, date range={'start': '2023-08-14', 'end': '2023-08-14'}
+Relevant Document 462, proc_AVGO-2023.csv, chunk index 3389, source_type=csv, date range={'start': '2023-08-15', 'end': '2023-08-15'}
+Relevant Document 463, proc_AMZN-2023.csv, chunk index 744, source_type=csv, date range={'start': '2023-08-15', 'end': '2023-08-15'}
+Relevant Document 464, proc_META-2023.csv, chunk index 6035, source_type=csv, date range={'start': '2023-08-15', 'end': '2023-08-15'}
+Relevant Document 465, proc_AVGO-2023.csv, chunk index 3390, source_type=csv, date range={'start': '2023-08-16', 'end': '2023-08-16'}
+Relevant Document 466, proc_AMZN-2023.csv, chunk index 745, source_type=csv, date range={'start': '2023-08-16', 'end': '2023-08-16'}
+Relevant Document 467, proc_META-2023.csv, chunk index 6036, source_type=csv, date range={'start': '2023-08-16', 'end': '2023-08-16'}
+Relevant Document 468, proc_AVGO-2023.csv, chunk index 3391, source_type=csv, date range={'start': '2023-08-17', 'end': '2023-08-17'}
+Relevant Document 469, proc_AMZN-2023.csv, chunk index 746, source_type=csv, date range={'start': '2023-08-17', 'end': '2023-08-17'}
+Relevant Document 470, proc_META-2023.csv, chunk index 6037, source_type=csv, date range={'start': '2023-08-17', 'end': '2023-08-17'}
+Relevant Document 471, proc_AVGO-2023.csv, chunk index 3392, source_type=csv, date range={'start': '2023-08-18', 'end': '2023-08-18'}
+Relevant Document 472, proc_AMZN-2023.csv, chunk index 747, source_type=csv, date range={'start': '2023-08-18', 'end': '2023-08-18'}
+Relevant Document 473, proc_META-2023.csv, chunk index 6038, source_type=csv, date range={'start': '2023-08-18', 'end': '2023-08-18'}
+Relevant Document 474, proc_AVGO-2023.csv, chunk index 3393, source_type=csv, date range={'start': '2023-08-21', 'end': '2023-08-21'}
+Relevant Document 475, proc_AMZN-2023.csv, chunk index 748, source_type=csv, date range={'start': '2023-08-21', 'end': '2023-08-21'}
+Relevant Document 476, proc_META-2023.csv, chunk index 6039, source_type=csv, date range={'start': '2023-08-21', 'end': '2023-08-21'}
+Relevant Document 477, proc_AVGO-2023.csv, chunk index 3394, source_type=csv, date range={'start': '2023-08-22', 'end': '2023-08-22'}
+Relevant Document 478, proc_AMZN-2023.csv, chunk index 749, source_type=csv, date range={'start': '2023-08-22', 'end': '2023-08-22'}
+Relevant Document 479, proc_META-2023.csv, chunk index 6040, source_type=csv, date range={'start': '2023-08-22', 'end': '2023-08-22'}
+Relevant Document 480, proc_AMZN-2023.csv, chunk index 750, source_type=csv, date range={'start': '2023-08-23', 'end': '2023-08-23'}
+Relevant Document 481, proc_AVGO-2023.csv, chunk index 3395, source_type=csv, date range={'start': '2023-08-23', 'end': '2023-08-23'}
+Relevant Document 482, proc_META-2023.csv, chunk index 6041, source_type=csv, date range={'start': '2023-08-23', 'end': '2023-08-23'}
+Relevant Document 483, proc_AMZN-2023.csv, chunk index 751, source_type=csv, date range={'start': '2023-08-24', 'end': '2023-08-24'}
+Relevant Document 484, proc_AVGO-2023.csv, chunk index 3396, source_type=csv, date range={'start': '2023-08-24', 'end': '2023-08-24'}
+Relevant Document 485, proc_META-2023.csv, chunk index 6042, source_type=csv, date range={'start': '2023-08-24', 'end': '2023-08-24'}
+Relevant Document 486, proc_AVGO-2023.csv, chunk index 3397, source_type=csv, date range={'start': '2023-08-25', 'end': '2023-08-25'}
+Relevant Document 487, proc_AMZN-2023.csv, chunk index 752, source_type=csv, date range={'start': '2023-08-25', 'end': '2023-08-25'}
+Relevant Document 488, proc_META-2023.csv, chunk index 6043, source_type=csv, date range={'start': '2023-08-25', 'end': '2023-08-25'}
+Relevant Document 489, proc_AVGO-2023.csv, chunk index 3398, source_type=csv, date range={'start': '2023-08-28', 'end': '2023-08-28'}
+Relevant Document 490, proc_AMZN-2023.csv, chunk index 753, source_type=csv, date range={'start': '2023-08-28', 'end': '2023-08-28'}
+Relevant Document 491, proc_META-2023.csv, chunk index 6044, source_type=csv, date range={'start': '2023-08-28', 'end': '2023-08-28'}
+Relevant Document 492, proc_AMZN-2023.csv, chunk index 754, source_type=csv, date range={'start': '2023-08-29', 'end': '2023-08-29'}
+Relevant Document 493, proc_AVGO-2023.csv, chunk index 3399, source_type=csv, date range={'start': '2023-08-29', 'end': '2023-08-29'}
+Relevant Document 494, proc_META-2023.csv, chunk index 6045, source_type=csv, date range={'start': '2023-08-29', 'end': '2023-08-29'}
+Relevant Document 495, proc_AVGO-2023.csv, chunk index 3400, source_type=csv, date range={'start': '2023-08-30', 'end': '2023-08-30'}
+Relevant Document 496, proc_AMZN-2023.csv, chunk index 755, source_type=csv, date range={'start': '2023-08-30', 'end': '2023-08-30'}
+Relevant Document 497, proc_META-2023.csv, chunk index 6046, source_type=csv, date range={'start': '2023-08-30', 'end': '2023-08-30'}
+Relevant Document 498, proc_AMZN-2023.csv, chunk index 756, source_type=csv, date range={'start': '2023-08-31', 'end': '2023-08-31'}
+Relevant Document 499, proc_AVGO-2023.csv, chunk index 3401, source_type=csv, date range={'start': '2023-08-31', 'end': '2023-08-31'}
+Relevant Document 500, proc_META-2023.csv, chunk index 6047, source_type=csv, date range={'start': '2023-08-31', 'end': '2023-08-31'}
+Relevant Document 501, proc_AVGO-2023.csv, chunk index 3402, source_type=csv, date range={'start': '2023-09-01', 'end': '2023-09-01'}
+Relevant Document 502, proc_AMZN-2023.csv, chunk index 757, source_type=csv, date range={'start': '2023-09-01', 'end': '2023-09-01'}
+Relevant Document 503, proc_META-2023.csv, chunk index 6048, source_type=csv, date range={'start': '2023-09-01', 'end': '2023-09-01'}
+Relevant Document 504, proc_AMZN-2023.csv, chunk index 758, source_type=csv, date range={'start': '2023-09-05', 'end': '2023-09-05'}
+Relevant Document 505, proc_AVGO-2023.csv, chunk index 3403, source_type=csv, date range={'start': '2023-09-05', 'end': '2023-09-05'}
+Relevant Document 506, proc_META-2023.csv, chunk index 6049, source_type=csv, date range={'start': '2023-09-05', 'end': '2023-09-05'}
+Relevant Document 507, proc_AVGO-2023.csv, chunk index 3404, source_type=csv, date range={'start': '2023-09-06', 'end': '2023-09-06'}
+Relevant Document 508, proc_AMZN-2023.csv, chunk index 759, source_type=csv, date range={'start': '2023-09-06', 'end': '2023-09-06'}
+Relevant Document 509, proc_META-2023.csv, chunk index 6050, source_type=csv, date range={'start': '2023-09-06', 'end': '2023-09-06'}
+Relevant Document 510, proc_AVGO-2023.csv, chunk index 3405, source_type=csv, date range={'start': '2023-09-07', 'end': '2023-09-07'}
+Relevant Document 511, proc_AMZN-2023.csv, chunk index 760, source_type=csv, date range={'start': '2023-09-07', 'end': '2023-09-07'}
+Relevant Document 512, proc_META-2023.csv, chunk index 6051, source_type=csv, date range={'start': '2023-09-07', 'end': '2023-09-07'}
+Relevant Document 513, proc_AVGO-2023.csv, chunk index 3406, source_type=csv, date range={'start': '2023-09-08', 'end': '2023-09-08'}
+Relevant Document 514, proc_AMZN-2023.csv, chunk index 761, source_type=csv, date range={'start': '2023-09-08', 'end': '2023-09-08'}
+Relevant Document 515, proc_META-2023.csv, chunk index 6052, source_type=csv, date range={'start': '2023-09-08', 'end': '2023-09-08'}
+Relevant Document 516, proc_AVGO-2023.csv, chunk index 3407, source_type=csv, date range={'start': '2023-09-11', 'end': '2023-09-11'}
+Relevant Document 517, proc_AMZN-2023.csv, chunk index 762, source_type=csv, date range={'start': '2023-09-11', 'end': '2023-09-11'}
+Relevant Document 518, proc_META-2023.csv, chunk index 6053, source_type=csv, date range={'start': '2023-09-11', 'end': '2023-09-11'}
+Relevant Document 519, proc_AVGO-2023.csv, chunk index 3408, source_type=csv, date range={'start': '2023-09-12', 'end': '2023-09-12'}
+Relevant Document 520, proc_AMZN-2023.csv, chunk index 763, source_type=csv, date range={'start': '2023-09-12', 'end': '2023-09-12'}
+Relevant Document 521, proc_META-2023.csv, chunk index 6054, source_type=csv, date range={'start': '2023-09-12', 'end': '2023-09-12'}
+Relevant Document 522, proc_AVGO-2023.csv, chunk index 3409, source_type=csv, date range={'start': '2023-09-13', 'end': '2023-09-13'}
+Relevant Document 523, proc_AMZN-2023.csv, chunk index 764, source_type=csv, date range={'start': '2023-09-13', 'end': '2023-09-13'}
+Relevant Document 524, proc_META-2023.csv, chunk index 6055, source_type=csv, date range={'start': '2023-09-13', 'end': '2023-09-13'}
+Relevant Document 525, proc_AVGO-2023.csv, chunk index 3410, source_type=csv, date range={'start': '2023-09-14', 'end': '2023-09-14'}
+Relevant Document 526, proc_AMZN-2023.csv, chunk index 765, source_type=csv, date range={'start': '2023-09-14', 'end': '2023-09-14'}
+Relevant Document 527, proc_META-2023.csv, chunk index 6056, source_type=csv, date range={'start': '2023-09-14', 'end': '2023-09-14'}
+Relevant Document 528, proc_AVGO-2023.csv, chunk index 3411, source_type=csv, date range={'start': '2023-09-15', 'end': '2023-09-15'}
+Relevant Document 529, proc_AMZN-2023.csv, chunk index 766, source_type=csv, date range={'start': '2023-09-15', 'end': '2023-09-15'}
+Relevant Document 530, proc_META-2023.csv, chunk index 6057, source_type=csv, date range={'start': '2023-09-15', 'end': '2023-09-15'}
+Relevant Document 531, proc_AVGO-2023.csv, chunk index 3412, source_type=csv, date range={'start': '2023-09-18', 'end': '2023-09-18'}
+Relevant Document 532, proc_AMZN-2023.csv, chunk index 767, source_type=csv, date range={'start': '2023-09-18', 'end': '2023-09-18'}
+Relevant Document 533, proc_META-2023.csv, chunk index 6058, source_type=csv, date range={'start': '2023-09-18', 'end': '2023-09-18'}
+Relevant Document 534, proc_AVGO-2023.csv, chunk index 3413, source_type=csv, date range={'start': '2023-09-19', 'end': '2023-09-19'}
+Relevant Document 535, proc_AMZN-2023.csv, chunk index 768, source_type=csv, date range={'start': '2023-09-19', 'end': '2023-09-19'}
+Relevant Document 536, proc_META-2023.csv, chunk index 6059, source_type=csv, date range={'start': '2023-09-19', 'end': '2023-09-19'}
+Relevant Document 537, proc_AVGO-2023.csv, chunk index 3414, source_type=csv, date range={'start': '2023-09-20', 'end': '2023-09-20'}
+Relevant Document 538, proc_AMZN-2023.csv, chunk index 769, source_type=csv, date range={'start': '2023-09-20', 'end': '2023-09-20'}
+Relevant Document 539, proc_META-2023.csv, chunk index 6060, source_type=csv, date range={'start': '2023-09-20', 'end': '2023-09-20'}
+Relevant Document 540, proc_AVGO-2023.csv, chunk index 3415, source_type=csv, date range={'start': '2023-09-21', 'end': '2023-09-21'}
+Relevant Document 541, proc_AMZN-2023.csv, chunk index 770, source_type=csv, date range={'start': '2023-09-21', 'end': '2023-09-21'}
+Relevant Document 542, proc_META-2023.csv, chunk index 6061, source_type=csv, date range={'start': '2023-09-21', 'end': '2023-09-21'}
+Relevant Document 543, proc_AVGO-2023.csv, chunk index 3416, source_type=csv, date range={'start': '2023-09-22', 'end': '2023-09-22'}
+Relevant Document 544, proc_AMZN-2023.csv, chunk index 771, source_type=csv, date range={'start': '2023-09-22', 'end': '2023-09-22'}
+Relevant Document 545, proc_META-2023.csv, chunk index 6062, source_type=csv, date range={'start': '2023-09-22', 'end': '2023-09-22'}
+Relevant Document 546, proc_AVGO-2023.csv, chunk index 3417, source_type=csv, date range={'start': '2023-09-25', 'end': '2023-09-25'}
+Relevant Document 547, proc_AMZN-2023.csv, chunk index 772, source_type=csv, date range={'start': '2023-09-25', 'end': '2023-09-25'}
+Relevant Document 548, proc_META-2023.csv, chunk index 6063, source_type=csv, date range={'start': '2023-09-25', 'end': '2023-09-25'}
+Relevant Document 549, proc_AVGO-2023.csv, chunk index 3418, source_type=csv, date range={'start': '2023-09-26', 'end': '2023-09-26'}
+Relevant Document 550, proc_AMZN-2023.csv, chunk index 773, source_type=csv, date range={'start': '2023-09-26', 'end': '2023-09-26'}
+Relevant Document 551, proc_META-2023.csv, chunk index 6064, source_type=csv, date range={'start': '2023-09-26', 'end': '2023-09-26'}
+Relevant Document 552, proc_AVGO-2023.csv, chunk index 3419, source_type=csv, date range={'start': '2023-09-27', 'end': '2023-09-27'}
+Relevant Document 553, proc_AMZN-2023.csv, chunk index 774, source_type=csv, date range={'start': '2023-09-27', 'end': '2023-09-27'}
+Relevant Document 554, proc_META-2023.csv, chunk index 6065, source_type=csv, date range={'start': '2023-09-27', 'end': '2023-09-27'}
+Relevant Document 555, proc_AVGO-2023.csv, chunk index 3420, source_type=csv, date range={'start': '2023-09-28', 'end': '2023-09-28'}
+Relevant Document 556, proc_AMZN-2023.csv, chunk index 775, source_type=csv, date range={'start': '2023-09-28', 'end': '2023-09-28'}
+Relevant Document 557, proc_META-2023.csv, chunk index 6066, source_type=csv, date range={'start': '2023-09-28', 'end': '2023-09-28'}
+Relevant Document 558, proc_AVGO-2023.csv, chunk index 3421, source_type=csv, date range={'start': '2023-09-29', 'end': '2023-09-29'}
+Relevant Document 559, proc_AMZN-2023.csv, chunk index 776, source_type=csv, date range={'start': '2023-09-29', 'end': '2023-09-29'}
+Relevant Document 560, proc_META-2023.csv, chunk index 6067, source_type=csv, date range={'start': '2023-09-29', 'end': '2023-09-29'}
+Relevant Document 561, proc_AVGO-2023.csv, chunk index 3422, source_type=csv, date range={'start': '2023-10-02', 'end': '2023-10-02'}
+Relevant Document 562, proc_AMZN-2023.csv, chunk index 777, source_type=csv, date range={'start': '2023-10-02', 'end': '2023-10-02'}
+Relevant Document 563, proc_META-2023.csv, chunk index 6068, source_type=csv, date range={'start': '2023-10-02', 'end': '2023-10-02'}
+Relevant Document 564, proc_AVGO-2023.csv, chunk index 3423, source_type=csv, date range={'start': '2023-10-03', 'end': '2023-10-03'}
+Relevant Document 565, proc_AMZN-2023.csv, chunk index 778, source_type=csv, date range={'start': '2023-10-03', 'end': '2023-10-03'}
+Relevant Document 566, proc_META-2023.csv, chunk index 6069, source_type=csv, date range={'start': '2023-10-03', 'end': '2023-10-03'}
+Relevant Document 567, proc_AVGO-2023.csv, chunk index 3424, source_type=csv, date range={'start': '2023-10-04', 'end': '2023-10-04'}
+Relevant Document 568, proc_AMZN-2023.csv, chunk index 779, source_type=csv, date range={'start': '2023-10-04', 'end': '2023-10-04'}
+Relevant Document 569, proc_META-2023.csv, chunk index 6070, source_type=csv, date range={'start': '2023-10-04', 'end': '2023-10-04'}
+Relevant Document 570, proc_AVGO-2023.csv, chunk index 3425, source_type=csv, date range={'start': '2023-10-05', 'end': '2023-10-05'}
+Relevant Document 571, proc_AMZN-2023.csv, chunk index 780, source_type=csv, date range={'start': '2023-10-05', 'end': '2023-10-05'}
+Relevant Document 572, proc_META-2023.csv, chunk index 6071, source_type=csv, date range={'start': '2023-10-05', 'end': '2023-10-05'}
+Relevant Document 573, proc_AVGO-2023.csv, chunk index 3426, source_type=csv, date range={'start': '2023-10-06', 'end': '2023-10-06'}
+Relevant Document 574, proc_AMZN-2023.csv, chunk index 781, source_type=csv, date range={'start': '2023-10-06', 'end': '2023-10-06'}
+Relevant Document 575, proc_META-2023.csv, chunk index 6072, source_type=csv, date range={'start': '2023-10-06', 'end': '2023-10-06'}
+Relevant Document 576, proc_AVGO-2023.csv, chunk index 3427, source_type=csv, date range={'start': '2023-10-09', 'end': '2023-10-09'}
+Relevant Document 577, proc_AMZN-2023.csv, chunk index 782, source_type=csv, date range={'start': '2023-10-09', 'end': '2023-10-09'}
+Relevant Document 578, proc_META-2023.csv, chunk index 6073, source_type=csv, date range={'start': '2023-10-09', 'end': '2023-10-09'}
+Relevant Document 579, proc_AVGO-2023.csv, chunk index 3428, source_type=csv, date range={'start': '2023-10-10', 'end': '2023-10-10'}
+Relevant Document 580, proc_AMZN-2023.csv, chunk index 783, source_type=csv, date range={'start': '2023-10-10', 'end': '2023-10-10'}
+Relevant Document 581, proc_META-2023.csv, chunk index 6074, source_type=csv, date range={'start': '2023-10-10', 'end': '2023-10-10'}
+Relevant Document 582, proc_AVGO-2023.csv, chunk index 3429, source_type=csv, date range={'start': '2023-10-11', 'end': '2023-10-11'}
+Relevant Document 583, proc_AMZN-2023.csv, chunk index 784, source_type=csv, date range={'start': '2023-10-11', 'end': '2023-10-11'}
+Relevant Document 584, proc_META-2023.csv, chunk index 6075, source_type=csv, date range={'start': '2023-10-11', 'end': '2023-10-11'}
+Relevant Document 585, proc_AVGO-2023.csv, chunk index 3430, source_type=csv, date range={'start': '2023-10-12', 'end': '2023-10-12'}
+Relevant Document 586, proc_AMZN-2023.csv, chunk index 785, source_type=csv, date range={'start': '2023-10-12', 'end': '2023-10-12'}
+Relevant Document 587, proc_META-2023.csv, chunk index 6076, source_type=csv, date range={'start': '2023-10-12', 'end': '2023-10-12'}
+Relevant Document 588, proc_AVGO-2023.csv, chunk index 3431, source_type=csv, date range={'start': '2023-10-13', 'end': '2023-10-13'}
+Relevant Document 589, proc_AMZN-2023.csv, chunk index 786, source_type=csv, date range={'start': '2023-10-13', 'end': '2023-10-13'}
+Relevant Document 590, proc_META-2023.csv, chunk index 6077, source_type=csv, date range={'start': '2023-10-13', 'end': '2023-10-13'}
+Relevant Document 591, proc_AVGO-2023.csv, chunk index 3432, source_type=csv, date range={'start': '2023-10-16', 'end': '2023-10-16'}
+Relevant Document 592, proc_AMZN-2023.csv, chunk index 787, source_type=csv, date range={'start': '2023-10-16', 'end': '2023-10-16'}
+Relevant Document 593, proc_META-2023.csv, chunk index 6078, source_type=csv, date range={'start': '2023-10-16', 'end': '2023-10-16'}
+Relevant Document 594, proc_AVGO-2023.csv, chunk index 3433, source_type=csv, date range={'start': '2023-10-17', 'end': '2023-10-17'}
+Relevant Document 595, proc_AMZN-2023.csv, chunk index 788, source_type=csv, date range={'start': '2023-10-17', 'end': '2023-10-17'}
+Relevant Document 596, proc_META-2023.csv, chunk index 6079, source_type=csv, date range={'start': '2023-10-17', 'end': '2023-10-17'}
+Relevant Document 597, proc_AVGO-2023.csv, chunk index 3434, source_type=csv, date range={'start': '2023-10-18', 'end': '2023-10-18'}
+Relevant Document 598, proc_AMZN-2023.csv, chunk index 789, source_type=csv, date range={'start': '2023-10-18', 'end': '2023-10-18'}
+Relevant Document 599, proc_META-2023.csv, chunk index 6080, source_type=csv, date range={'start': '2023-10-18', 'end': '2023-10-18'}
+Relevant Document 600, proc_AVGO-2023.csv, chunk index 3435, source_type=csv, date range={'start': '2023-10-19', 'end': '2023-10-19'}
+Relevant Document 601, proc_AMZN-2023.csv, chunk index 790, source_type=csv, date range={'start': '2023-10-19', 'end': '2023-10-19'}
+Relevant Document 602, proc_META-2023.csv, chunk index 6081, source_type=csv, date range={'start': '2023-10-19', 'end': '2023-10-19'}
+Relevant Document 603, proc_AVGO-2023.csv, chunk index 3436, source_type=csv, date range={'start': '2023-10-20', 'end': '2023-10-20'}
+Relevant Document 604, proc_AMZN-2023.csv, chunk index 791, source_type=csv, date range={'start': '2023-10-20', 'end': '2023-10-20'}
+Relevant Document 605, proc_META-2023.csv, chunk index 6082, source_type=csv, date range={'start': '2023-10-20', 'end': '2023-10-20'}
+Relevant Document 606, proc_AVGO-2023.csv, chunk index 3437, source_type=csv, date range={'start': '2023-10-23', 'end': '2023-10-23'}
+Relevant Document 607, proc_AMZN-2023.csv, chunk index 792, source_type=csv, date range={'start': '2023-10-23', 'end': '2023-10-23'}
+Relevant Document 608, proc_META-2023.csv, chunk index 6083, source_type=csv, date range={'start': '2023-10-23', 'end': '2023-10-23'}
+Relevant Document 609, proc_AVGO-2023.csv, chunk index 3438, source_type=csv, date range={'start': '2023-10-24', 'end': '2023-10-24'}
+Relevant Document 610, proc_AMZN-2023.csv, chunk index 793, source_type=csv, date range={'start': '2023-10-24', 'end': '2023-10-24'}
+Relevant Document 611, proc_META-2023.csv, chunk index 6084, source_type=csv, date range={'start': '2023-10-24', 'end': '2023-10-24'}
+Relevant Document 612, proc_AVGO-2023.csv, chunk index 3439, source_type=csv, date range={'start': '2023-10-25', 'end': '2023-10-25'}
+Relevant Document 613, proc_AMZN-2023.csv, chunk index 794, source_type=csv, date range={'start': '2023-10-25', 'end': '2023-10-25'}
+Relevant Document 614, proc_META-2023.csv, chunk index 6085, source_type=csv, date range={'start': '2023-10-25', 'end': '2023-10-25'}
+Relevant Document 615, proc_AVGO-2023.csv, chunk index 3440, source_type=csv, date range={'start': '2023-10-26', 'end': '2023-10-26'}
+Relevant Document 616, proc_AMZN-2023.csv, chunk index 795, source_type=csv, date range={'start': '2023-10-26', 'end': '2023-10-26'}
+Relevant Document 617, proc_META-2023.csv, chunk index 6086, source_type=csv, date range={'start': '2023-10-26', 'end': '2023-10-26'}
+Relevant Document 618, proc_AVGO-2023.csv, chunk index 3441, source_type=csv, date range={'start': '2023-10-27', 'end': '2023-10-27'}
+Relevant Document 619, proc_AMZN-2023.csv, chunk index 796, source_type=csv, date range={'start': '2023-10-27', 'end': '2023-10-27'}
+Relevant Document 620, proc_META-2023.csv, chunk index 6087, source_type=csv, date range={'start': '2023-10-27', 'end': '2023-10-27'}
+Relevant Document 621, proc_AVGO-2023.csv, chunk index 3442, source_type=csv, date range={'start': '2023-10-30', 'end': '2023-10-30'}
+Relevant Document 622, proc_AMZN-2023.csv, chunk index 797, source_type=csv, date range={'start': '2023-10-30', 'end': '2023-10-30'}
+Relevant Document 623, proc_META-2023.csv, chunk index 6088, source_type=csv, date range={'start': '2023-10-30', 'end': '2023-10-30'}
+Relevant Document 624, proc_AVGO-2023.csv, chunk index 3443, source_type=csv, date range={'start': '2023-10-31', 'end': '2023-10-31'}
+Relevant Document 625, proc_AMZN-2023.csv, chunk index 798, source_type=csv, date range={'start': '2023-10-31', 'end': '2023-10-31'}
+Relevant Document 626, proc_META-2023.csv, chunk index 6089, source_type=csv, date range={'start': '2023-10-31', 'end': '2023-10-31'}
+Relevant Document 627, proc_AVGO-2023.csv, chunk index 3444, source_type=csv, date range={'start': '2023-11-01', 'end': '2023-11-01'}
+Relevant Document 628, proc_AMZN-2023.csv, chunk index 799, source_type=csv, date range={'start': '2023-11-01', 'end': '2023-11-01'}
+Relevant Document 629, proc_META-2023.csv, chunk index 6090, source_type=csv, date range={'start': '2023-11-01', 'end': '2023-11-01'}
+Relevant Document 630, proc_AMZN-2023.csv, chunk index 800, source_type=csv, date range={'start': '2023-11-02', 'end': '2023-11-02'}
+Relevant Document 631, proc_AVGO-2023.csv, chunk index 3445, source_type=csv, date range={'start': '2023-11-02', 'end': '2023-11-02'}
+Relevant Document 632, proc_META-2023.csv, chunk index 6091, source_type=csv, date range={'start': '2023-11-02', 'end': '2023-11-02'}
+Relevant Document 633, proc_AVGO-2023.csv, chunk index 3446, source_type=csv, date range={'start': '2023-11-03', 'end': '2023-11-03'}
+Relevant Document 634, proc_AMZN-2023.csv, chunk index 801, source_type=csv, date range={'start': '2023-11-03', 'end': '2023-11-03'}
+Relevant Document 635, proc_META-2023.csv, chunk index 6092, source_type=csv, date range={'start': '2023-11-03', 'end': '2023-11-03'}
+Relevant Document 636, proc_AVGO-2023.csv, chunk index 3447, source_type=csv, date range={'start': '2023-11-06', 'end': '2023-11-06'}
+Relevant Document 637, proc_AMZN-2023.csv, chunk index 802, source_type=csv, date range={'start': '2023-11-06', 'end': '2023-11-06'}
+Relevant Document 638, proc_META-2023.csv, chunk index 6093, source_type=csv, date range={'start': '2023-11-06', 'end': '2023-11-06'}
+Relevant Document 639, proc_AVGO-2023.csv, chunk index 3448, source_type=csv, date range={'start': '2023-11-07', 'end': '2023-11-07'}
+Relevant Document 640, proc_AMZN-2023.csv, chunk index 803, source_type=csv, date range={'start': '2023-11-07', 'end': '2023-11-07'}
+Relevant Document 641, proc_META-2023.csv, chunk index 6094, source_type=csv, date range={'start': '2023-11-07', 'end': '2023-11-07'}
+Relevant Document 642, proc_AVGO-2023.csv, chunk index 3449, source_type=csv, date range={'start': '2023-11-08', 'end': '2023-11-08'}
+Relevant Document 643, proc_AMZN-2023.csv, chunk index 804, source_type=csv, date range={'start': '2023-11-08', 'end': '2023-11-08'}
+Relevant Document 644, proc_META-2023.csv, chunk index 6095, source_type=csv, date range={'start': '2023-11-08', 'end': '2023-11-08'}
+Relevant Document 645, proc_AVGO-2023.csv, chunk index 3450, source_type=csv, date range={'start': '2023-11-09', 'end': '2023-11-09'}
+Relevant Document 646, proc_AMZN-2023.csv, chunk index 805, source_type=csv, date range={'start': '2023-11-09', 'end': '2023-11-09'}
+Relevant Document 647, proc_META-2023.csv, chunk index 6096, source_type=csv, date range={'start': '2023-11-09', 'end': '2023-11-09'}
+Relevant Document 648, proc_AVGO-2023.csv, chunk index 3451, source_type=csv, date range={'start': '2023-11-10', 'end': '2023-11-10'}
+Relevant Document 649, proc_AMZN-2023.csv, chunk index 806, source_type=csv, date range={'start': '2023-11-10', 'end': '2023-11-10'}
+Relevant Document 650, proc_META-2023.csv, chunk index 6097, source_type=csv, date range={'start': '2023-11-10', 'end': '2023-11-10'}
+Relevant Document 651, proc_AVGO-2023.csv, chunk index 3452, source_type=csv, date range={'start': '2023-11-13', 'end': '2023-11-13'}
+Relevant Document 652, proc_AMZN-2023.csv, chunk index 807, source_type=csv, date range={'start': '2023-11-13', 'end': '2023-11-13'}
+Relevant Document 653, proc_META-2023.csv, chunk index 6098, source_type=csv, date range={'start': '2023-11-13', 'end': '2023-11-13'}
+Relevant Document 654, proc_AVGO-2023.csv, chunk index 3453, source_type=csv, date range={'start': '2023-11-14', 'end': '2023-11-14'}
+Relevant Document 655, proc_AMZN-2023.csv, chunk index 808, source_type=csv, date range={'start': '2023-11-14', 'end': '2023-11-14'}
+Relevant Document 656, proc_META-2023.csv, chunk index 6099, source_type=csv, date range={'start': '2023-11-14', 'end': '2023-11-14'}
+Relevant Document 657, proc_AVGO-2023.csv, chunk index 3454, source_type=csv, date range={'start': '2023-11-15', 'end': '2023-11-15'}
+Relevant Document 658, proc_AMZN-2023.csv, chunk index 809, source_type=csv, date range={'start': '2023-11-15', 'end': '2023-11-15'}
+Relevant Document 659, proc_META-2023.csv, chunk index 6100, source_type=csv, date range={'start': '2023-11-15', 'end': '2023-11-15'}
+Relevant Document 660, proc_AVGO-2023.csv, chunk index 3455, source_type=csv, date range={'start': '2023-11-16', 'end': '2023-11-16'}
+Relevant Document 661, proc_AMZN-2023.csv, chunk index 810, source_type=csv, date range={'start': '2023-11-16', 'end': '2023-11-16'}
+Relevant Document 662, proc_META-2023.csv, chunk index 6101, source_type=csv, date range={'start': '2023-11-16', 'end': '2023-11-16'}
+Relevant Document 663, proc_AVGO-2023.csv, chunk index 3456, source_type=csv, date range={'start': '2023-11-17', 'end': '2023-11-17'}
+Relevant Document 664, proc_AMZN-2023.csv, chunk index 811, source_type=csv, date range={'start': '2023-11-17', 'end': '2023-11-17'}
+Relevant Document 665, proc_META-2023.csv, chunk index 6102, source_type=csv, date range={'start': '2023-11-17', 'end': '2023-11-17'}
+Relevant Document 666, proc_AMZN-2023.csv, chunk index 812, source_type=csv, date range={'start': '2023-11-20', 'end': '2023-11-20'}
+Relevant Document 667, proc_AVGO-2023.csv, chunk index 3457, source_type=csv, date range={'start': '2023-11-20', 'end': '2023-11-20'}
+Relevant Document 668, proc_META-2023.csv, chunk index 6103, source_type=csv, date range={'start': '2023-11-20', 'end': '2023-11-20'}
+Relevant Document 669, proc_AVGO-2023.csv, chunk index 3458, source_type=csv, date range={'start': '2023-11-21', 'end': '2023-11-21'}
+Relevant Document 670, proc_AMZN-2023.csv, chunk index 813, source_type=csv, date range={'start': '2023-11-21', 'end': '2023-11-21'}
+Relevant Document 671, proc_META-2023.csv, chunk index 6104, source_type=csv, date range={'start': '2023-11-21', 'end': '2023-11-21'}
+Relevant Document 672, proc_AVGO-2023.csv, chunk index 3459, source_type=csv, date range={'start': '2023-11-22', 'end': '2023-11-22'}
+Relevant Document 673, proc_AMZN-2023.csv, chunk index 814, source_type=csv, date range={'start': '2023-11-22', 'end': '2023-11-22'}
+Relevant Document 674, proc_META-2023.csv, chunk index 6105, source_type=csv, date range={'start': '2023-11-22', 'end': '2023-11-22'}
+Relevant Document 675, proc_AVGO-2023.csv, chunk index 3460, source_type=csv, date range={'start': '2023-11-24', 'end': '2023-11-24'}
+Relevant Document 676, proc_AMZN-2023.csv, chunk index 815, source_type=csv, date range={'start': '2023-11-24', 'end': '2023-11-24'}
+Relevant Document 677, proc_META-2023.csv, chunk index 6106, source_type=csv, date range={'start': '2023-11-24', 'end': '2023-11-24'}
+Relevant Document 678, proc_AVGO-2023.csv, chunk index 3461, source_type=csv, date range={'start': '2023-11-27', 'end': '2023-11-27'}
+Relevant Document 679, proc_AMZN-2023.csv, chunk index 816, source_type=csv, date range={'start': '2023-11-27', 'end': '2023-11-27'}
+Relevant Document 680, proc_META-2023.csv, chunk index 6107, source_type=csv, date range={'start': '2023-11-27', 'end': '2023-11-27'}
+Relevant Document 681, proc_AVGO-2023.csv, chunk index 3462, source_type=csv, date range={'start': '2023-11-28', 'end': '2023-11-28'}
+Relevant Document 682, proc_AMZN-2023.csv, chunk index 817, source_type=csv, date range={'start': '2023-11-28', 'end': '2023-11-28'}
+Relevant Document 683, proc_META-2023.csv, chunk index 6108, source_type=csv, date range={'start': '2023-11-28', 'end': '2023-11-28'}
+Relevant Document 684, proc_AVGO-2023.csv, chunk index 3463, source_type=csv, date range={'start': '2023-11-29', 'end': '2023-11-29'}
+Relevant Document 685, proc_AMZN-2023.csv, chunk index 818, source_type=csv, date range={'start': '2023-11-29', 'end': '2023-11-29'}
+Relevant Document 686, proc_META-2023.csv, chunk index 6109, source_type=csv, date range={'start': '2023-11-29', 'end': '2023-11-29'}
+Relevant Document 687, proc_AVGO-2023.csv, chunk index 3464, source_type=csv, date range={'start': '2023-11-30', 'end': '2023-11-30'}
+Relevant Document 688, proc_AMZN-2023.csv, chunk index 819, source_type=csv, date range={'start': '2023-11-30', 'end': '2023-11-30'}
+Relevant Document 689, proc_META-2023.csv, chunk index 6110, source_type=csv, date range={'start': '2023-11-30', 'end': '2023-11-30'}
+Relevant Document 690, proc_AVGO-2023.csv, chunk index 3465, source_type=csv, date range={'start': '2023-12-01', 'end': '2023-12-01'}
+Relevant Document 691, proc_AMZN-2023.csv, chunk index 820, source_type=csv, date range={'start': '2023-12-01', 'end': '2023-12-01'}
+Relevant Document 692, proc_META-2023.csv, chunk index 6111, source_type=csv, date range={'start': '2023-12-01', 'end': '2023-12-01'}
+Relevant Document 693, proc_AVGO-2023.csv, chunk index 3466, source_type=csv, date range={'start': '2023-12-04', 'end': '2023-12-04'}
+Relevant Document 694, proc_AMZN-2023.csv, chunk index 821, source_type=csv, date range={'start': '2023-12-04', 'end': '2023-12-04'}
+Relevant Document 695, proc_META-2023.csv, chunk index 6112, source_type=csv, date range={'start': '2023-12-04', 'end': '2023-12-04'}
+Relevant Document 696, proc_AVGO-2023.csv, chunk index 3467, source_type=csv, date range={'start': '2023-12-05', 'end': '2023-12-05'}
+Relevant Document 697, proc_AMZN-2023.csv, chunk index 822, source_type=csv, date range={'start': '2023-12-05', 'end': '2023-12-05'}
+Relevant Document 698, proc_META-2023.csv, chunk index 6113, source_type=csv, date range={'start': '2023-12-05', 'end': '2023-12-05'}
+Relevant Document 699, proc_AVGO-2023.csv, chunk index 3468, source_type=csv, date range={'start': '2023-12-06', 'end': '2023-12-06'}
+Relevant Document 700, proc_AMZN-2023.csv, chunk index 823, source_type=csv, date range={'start': '2023-12-06', 'end': '2023-12-06'}
+Relevant Document 701, proc_META-2023.csv, chunk index 6114, source_type=csv, date range={'start': '2023-12-06', 'end': '2023-12-06'}
+Relevant Document 702, proc_AVGO-2023.csv, chunk index 3469, source_type=csv, date range={'start': '2023-12-07', 'end': '2023-12-07'}
+Relevant Document 703, proc_AMZN-2023.csv, chunk index 824, source_type=csv, date range={'start': '2023-12-07', 'end': '2023-12-07'}
+Relevant Document 704, proc_META-2023.csv, chunk index 6115, source_type=csv, date range={'start': '2023-12-07', 'end': '2023-12-07'}
+Relevant Document 705, proc_AVGO-2023.csv, chunk index 3470, source_type=csv, date range={'start': '2023-12-08', 'end': '2023-12-08'}
+Relevant Document 706, proc_AMZN-2023.csv, chunk index 825, source_type=csv, date range={'start': '2023-12-08', 'end': '2023-12-08'}
+Relevant Document 707, proc_META-2023.csv, chunk index 6116, source_type=csv, date range={'start': '2023-12-08', 'end': '2023-12-08'}
+Relevant Document 708, proc_AVGO-2023.csv, chunk index 3471, source_type=csv, date range={'start': '2023-12-11', 'end': '2023-12-11'}
+Relevant Document 709, proc_AMZN-2023.csv, chunk index 826, source_type=csv, date range={'start': '2023-12-11', 'end': '2023-12-11'}
+Relevant Document 710, proc_META-2023.csv, chunk index 6117, source_type=csv, date range={'start': '2023-12-11', 'end': '2023-12-11'}
+Relevant Document 711, proc_AVGO-2023.csv, chunk index 3472, source_type=csv, date range={'start': '2023-12-12', 'end': '2023-12-12'}
+Relevant Document 712, proc_AMZN-2023.csv, chunk index 827, source_type=csv, date range={'start': '2023-12-12', 'end': '2023-12-12'}
+Relevant Document 713, proc_META-2023.csv, chunk index 6118, source_type=csv, date range={'start': '2023-12-12', 'end': '2023-12-12'}
+Relevant Document 714, proc_AVGO-2023.csv, chunk index 3473, source_type=csv, date range={'start': '2023-12-13', 'end': '2023-12-13'}
+Relevant Document 715, proc_AMZN-2023.csv, chunk index 828, source_type=csv, date range={'start': '2023-12-13', 'end': '2023-12-13'}
+Relevant Document 716, proc_META-2023.csv, chunk index 6119, source_type=csv, date range={'start': '2023-12-13', 'end': '2023-12-13'}
+Relevant Document 717, proc_AVGO-2023.csv, chunk index 3474, source_type=csv, date range={'start': '2023-12-14', 'end': '2023-12-14'}
+Relevant Document 718, proc_AMZN-2023.csv, chunk index 829, source_type=csv, date range={'start': '2023-12-14', 'end': '2023-12-14'}
+Relevant Document 719, proc_META-2023.csv, chunk index 6120, source_type=csv, date range={'start': '2023-12-14', 'end': '2023-12-14'}
+Relevant Document 720, proc_AVGO-2023.csv, chunk index 3475, source_type=csv, date range={'start': '2023-12-15', 'end': '2023-12-15'}
+Relevant Document 721, proc_AMZN-2023.csv, chunk index 830, source_type=csv, date range={'start': '2023-12-15', 'end': '2023-12-15'}
+Relevant Document 722, proc_META-2023.csv, chunk index 6121, source_type=csv, date range={'start': '2023-12-15', 'end': '2023-12-15'}
+Relevant Document 723, proc_AVGO-2023.csv, chunk index 3476, source_type=csv, date range={'start': '2023-12-18', 'end': '2023-12-18'}
+Relevant Document 724, proc_AMZN-2023.csv, chunk index 831, source_type=csv, date range={'start': '2023-12-18', 'end': '2023-12-18'}
+Relevant Document 725, proc_META-2023.csv, chunk index 6122, source_type=csv, date range={'start': '2023-12-18', 'end': '2023-12-18'}
+Relevant Document 726, proc_AVGO-2023.csv, chunk index 3477, source_type=csv, date range={'start': '2023-12-19', 'end': '2023-12-19'}
+Relevant Document 727, proc_AMZN-2023.csv, chunk index 832, source_type=csv, date range={'start': '2023-12-19', 'end': '2023-12-19'}
+Relevant Document 728, proc_META-2023.csv, chunk index 6123, source_type=csv, date range={'start': '2023-12-19', 'end': '2023-12-19'}
+Relevant Document 729, proc_AVGO-2023.csv, chunk index 3478, source_type=csv, date range={'start': '2023-12-20', 'end': '2023-12-20'}
+Relevant Document 730, proc_AMZN-2023.csv, chunk index 833, source_type=csv, date range={'start': '2023-12-20', 'end': '2023-12-20'}
+Relevant Document 731, proc_META-2023.csv, chunk index 6124, source_type=csv, date range={'start': '2023-12-20', 'end': '2023-12-20'}
+Relevant Document 732, proc_AVGO-2023.csv, chunk index 3479, source_type=csv, date range={'start': '2023-12-21', 'end': '2023-12-21'}
+Relevant Document 733, proc_AMZN-2023.csv, chunk index 834, source_type=csv, date range={'start': '2023-12-21', 'end': '2023-12-21'}
+Relevant Document 734, proc_META-2023.csv, chunk index 6125, source_type=csv, date range={'start': '2023-12-21', 'end': '2023-12-21'}
+Relevant Document 735, proc_AVGO-2023.csv, chunk index 3480, source_type=csv, date range={'start': '2023-12-22', 'end': '2023-12-22'}
+Relevant Document 736, proc_AMZN-2023.csv, chunk index 835, source_type=csv, date range={'start': '2023-12-22', 'end': '2023-12-22'}
+Relevant Document 737, proc_META-2023.csv, chunk index 6126, source_type=csv, date range={'start': '2023-12-22', 'end': '2023-12-22'}
+Relevant Document 738, proc_AVGO-2023.csv, chunk index 3481, source_type=csv, date range={'start': '2023-12-26', 'end': '2023-12-26'}
+Relevant Document 739, proc_AMZN-2023.csv, chunk index 836, source_type=csv, date range={'start': '2023-12-26', 'end': '2023-12-26'}
+Relevant Document 740, proc_META-2023.csv, chunk index 6127, source_type=csv, date range={'start': '2023-12-26', 'end': '2023-12-26'}
+Relevant Document 741, proc_AVGO-2023.csv, chunk index 3482, source_type=csv, date range={'start': '2023-12-27', 'end': '2023-12-27'}
+Relevant Document 742, proc_AMZN-2023.csv, chunk index 837, source_type=csv, date range={'start': '2023-12-27', 'end': '2023-12-27'}
+Relevant Document 743, proc_META-2023.csv, chunk index 6128, source_type=csv, date range={'start': '2023-12-27', 'end': '2023-12-27'}
+Relevant Document 744, proc_AVGO-2023.csv, chunk index 3483, source_type=csv, date range={'start': '2023-12-28', 'end': '2023-12-28'}
+Relevant Document 745, proc_AMZN-2023.csv, chunk index 838, source_type=csv, date range={'start': '2023-12-28', 'end': '2023-12-28'}
+Relevant Document 746, proc_META-2023.csv, chunk index 6129, source_type=csv, date range={'start': '2023-12-28', 'end': '2023-12-28'}
+Relevant Document 747, proc_AVGO-2023.csv, chunk index 3484, source_type=csv, date range={'start': '2023-12-29', 'end': '2023-12-29'}
+Relevant Document 748, proc_AMZN-2023.csv, chunk index 839, source_type=csv, date range={'start': '2023-12-29', 'end': '2023-12-29'}
+Relevant Document 749, proc_META-2023.csv, chunk index 6130, source_type=csv, date range={'start': '2023-12-29', 'end': '2023-12-29'}
+Relevant Document 750, NASDAQ_AVGO_2023.txt, chunk index 53, source_type=pdf, year=2023
+Relevant Document 751, NASDAQ_AMZN_2023.txt, chunk index 21, source_type=pdf, year=2023
+Relevant Document 752, NASDAQ_AVGO_2023.txt, chunk index 49, source_type=pdf, year=2023
+Relevant Document 753, NASDAQ_AMZN_2023.txt, chunk index 22, source_type=pdf, year=2023
+Relevant Document 754, NASDAQ_AVGO_2023.txt, chunk index 40, source_type=pdf, year=2023
+Relevant Document 755, NASDAQ_AVGO_2023.txt, chunk index 51, source_type=pdf, year=2023
+Relevant Document 756, NASDAQ_AMZN_2023.txt, chunk index 65, source_type=pdf, year=2023
+Relevant Document 757, NASDAQ_AVGO_2023.txt, chunk index 33, source_type=pdf, year=2023
+Relevant Document 758, NASDAQ_AMZN_2023.txt, chunk index 35, source_type=pdf, year=2023
+Relevant Document 759, NASDAQ_AVGO_2023.txt, chunk index 48, source_type=pdf, year=2023
+Using model: openai.gpt-oss-120b-1:0
+
+
+
+----
+Response:
+Usage: {'inputTokens': 56139, 'outputTokens': 4695, 'totalTokens': 60834}
+Metrics: {'latencyMs': 31533}
+**Meta Platforms, Inc. (META) had a positive growth streak that lasted at least 10 consecutive weeks in 2023.**
+
+*Evidence from the daily closing‑price CSV files*  
+
+Looking at the Friday (week‑ending) closing prices for META:
+
+| Date (Fri) | Close |
+|------------|-------|
+| 2023‑05‑05 | $232.78 |
+| 2023‑05‑12 | $233.81 |
+| 2023‑05‑19 | $245.64 |
+| 2023‑05‑26 | $247.30 |
+| 2023‑06‑02 | $254.53 |
+| 2023‑06‑09 | $261.79 |
+| 2023‑06‑16 | $268.87 |
+| 2023‑06‑23 | $276.42 |
+| 2023‑06‑30 | $286.98 |
+| 2023‑07‑07 | $295.35 |
+| 2023‑07‑14 | $302.07 |
+| 2023‑07‑21 | $306.48 |
+| 2023‑07‑28 | $320.03 |
+| 2023‑08‑04 | $329.68 |
+| 2023‑08‑11 | $331.99 |
+| 2023‑08‑18 | $334.44 |
+| 2023‑08‑25 | $340.38 |
+| 2023‑09‑01 | $352.65 |
+| 2023‑09‑08 | $359.38 |
+| 2023‑09‑15 | $362.14 |
+
+From **May 5 2023 through September 15 2023**, each weekly closing price was higher than the previous week’s closing price—a streak of **21 consecutive weeks**, well beyond the 10‑week threshold.
+
+---
+
+**Amazon (AMZN)** and **Broadcom (AVGO)** both experienced multiple weeks where the price fell relative to the prior week, breaking any possible 10‑week upward run.
+
+**TSMC** is not present in the supplied CSV or PDF data, so its price trend cannot be assessed from the provided material.
+
+**Conclusion:** Among the companies listed, only **Meta** demonstrated a positive growth streak lasting at least ten weeks in 2023.

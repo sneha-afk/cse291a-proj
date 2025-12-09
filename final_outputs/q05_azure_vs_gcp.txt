@@ -1,0 +1,155 @@
+[INFO] Qdrant running at http://localhost:6333
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over CSV stock data.
+
+The CSV files have headers like:
+- ticker, date, date_ts, open, high, low, close, volume, year, quarter
+
+Given a user query of:
+"Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
+
+Possible query:
+"company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison"
+
+If you are unsure of the ticker symbol of a company, guess multiple possible symbols within an "any" match.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
+You're only given two metadata keys: company and date_range
+chunk_count is the number of business days within the date range for a given company
+{
+    "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
+    "filters: [
+        {
+            "must": [
+                    {"key": "company", "match": {"value": "AAPL"}},
+                    {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                    {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+                ],
+            "chunk_count": 81,
+        },
+        {
+            "must": [
+                {"key": "company", "match": {"value": "MSFT"}},
+                {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+            ],
+            "chunk_count": 81
+        }
+    ]
+}
+Reasoning: high
+
+
+Your task:
+- Read the user's question.
+- Infer the correct tickers, date ranges, and any other needed filters.
+- You will first rewrite the user query then add it to a given valid Python dict literal.
+- Return ONLY a valid JSON object in this exact qdrant query format.
+- Do NOT include backticks, explanations, or any surrounding text. Just a valid python dictionary.
+- If the prompt does not require financial data retrieval, (e.g. questions about company strategies,
+  products, or other non-fiscal topics), return an empty query with zero chunk count:
+{
+    "query": "<optimized query text>",
+    "filters": [],
+    "chunk_count": 0
+}
+
+
+user: How did Microsoft Azure's revenue and market share compare to Google Cloud Platform in 2024 and what do the companies anticipate as key areas for growth?
+
+----
+Response:
+Usage: {'inputTokens': 675, 'outputTokens': 258, 'totalTokens': 933}
+Metrics: {'latencyMs': 1821}
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over PDF financial reports such as 10-Ks, 10-Qs, and annual reports.
+
+Rewrite the user's question into a short, dense query that:
+- Mentions the company names, segments (e.g., "Google Search"), and years.
+- Targets sections like "Results of Operations", "Segment Results", "Revenue", and
+  commentary on growth, drivers, and profitability.
+- Uses phrases that are likely to appear in those reports, like
+  "year-over-year", "segment revenue", "results of operations", "management discussion".
+- Targets keywords relevant to the question and financial analysis.
+
+You may also use filters on the "company" (ticker symbol) and "year" keys if specific companies or years are mentioned.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+The company key is based of the stock ticker symbol, e.g., "AAPL" for Apple, "MSFT" for Microsoft, "GOOGL" for Google, etc.
+If you are unsure of the ticker symbol, guess multiple possible symbols.
+
+For example, given the user question, "What were key revenue figures for Amazon and Oracle in 2021.",
+a optimized query would be:
+{
+    "query": <optimized query text>,
+    "filters": [
+        {
+            "must": [
+                {"key": "year", "match": {"value": "2021"}},
+                {"key": "company", "match": {"any": ["AMZN", "ORCL"]}}
+            ]
+        }
+    ]
+}
+
+Be concise. No explanations, just the optimized query.
+
+user: How did Microsoft Azure's revenue and market share compare to Google Cloud Platform in 2024 and what do the companies anticipate as key areas for growth?
+
+----
+Response:
+Usage: {'inputTokens': 470, 'outputTokens': 538, 'totalTokens': 1008}
+Metrics: {'latencyMs': 3872}
+[WARN] CSV query failed: Unexpected Response: 422 (Unprocessable Entity)
+Raw response content:
+b'{"status":{"error":"Validation error in JSON body: [internal.limit: value 0 invalid, must be 1 or larger]"},"time":0.0}'
+Retrieved the following docs:
+Relevant Document 0, NASDAQ_MSFT_2024.txt, chunk index 24, source_type=pdf, year=2024
+Relevant Document 1, NASDAQ_MSFT_2024.txt, chunk index 23, source_type=pdf, year=2024
+Relevant Document 2, NASDAQ_MSFT_2024.txt, chunk index 72, source_type=pdf, year=2024
+Relevant Document 3, NASDAQ_GOOGL_2024.txt, chunk index 32, source_type=pdf, year=2024
+Relevant Document 4, NASDAQ_MSFT_2024.txt, chunk index 18, source_type=pdf, year=2024
+Relevant Document 5, NASDAQ_MSFT_2024.txt, chunk index 20, source_type=pdf, year=2024
+Relevant Document 6, NASDAQ_GOOGL_2024.txt, chunk index 28, source_type=pdf, year=2024
+Relevant Document 7, NASDAQ_GOOGL_2024.txt, chunk index 53, source_type=pdf, year=2024
+Relevant Document 8, NASDAQ_GOOGL_2024.txt, chunk index 82, source_type=pdf, year=2024
+Relevant Document 9, NASDAQ_MSFT_2024.txt, chunk index 21, source_type=pdf, year=2024
+Using model: openai.gpt-oss-120b-1:0
+
+
+
+----
+Response:
+Usage: {'inputTokens': 6724, 'outputTokens': 1317, 'totalTokens': 8041}
+Metrics: {'latencyMs': 6176}
+**What the 2024 data show**
+
+| Company | Revenue trend that is reported for 2024 | What the report says about where the business will grow |
+|---------|-----------------------------------------|----------------------------------------------------------|
+| **Microsoft – Azure (part of “Server products and cloud services”)** | The segment that contains Azure grew **22 % overall** in 2024, and **Azure‑related revenue grew 30 %** year‑over‑year, driven by higher consumption‑based usage. 【Document 0†L1-L4】 | Microsoft highlights three “key” growth levers for its cloud business: <br>• Scaling its **AI‑focused infrastructure** (the same Azure consumption‑based services that drove the 30 % gain) 【Document 0†L4-L5】<br>• Ongoing **investments in Azure and other cloud services** (including more AI‑enabled features) 【Document 4†L24-L27】<br>• Continued expansion of **Microsoft 365/Office 365 Commercial** and other cloud‑first workloads that feed Azure demand 【Document 4†L31-L34】 |
+| **Google – Google Cloud Platform (GCP, part of “Google Cloud”)** | The most recent full‑year figure that is disclosed is for FY 2023: **$33.1 billion** in revenue, an increase of **$6.8 billion** (≈ 27 %) from 2022 【Document 8†L13-L18】.  No separate 2024 revenue or growth % for GCP is provided in the supplied documents. | Google points to its **infrastructure and platform services** (the core of GCP) and **Google Workspace** as the primary growth engines for the cloud business 【Document 6†L1-L5】.  It also calls out **AI‑related offerings** – Vertex AI, Duet AI for Cloud, and AI‑enabled infrastructure – as a major focus for future expansion 【Document 6†L6-L9】. |
+
+**Can we compare market share?**
+
+* No market‑share percentages for either Azure or GCP are included in any of the supplied PDFs or CSV tables.  
+* Because Google’s 2024 cloud revenue is not disclosed, a direct revenue‑size comparison (and therefore a market‑share estimate) cannot be calculated from the available data.
+
+**Take‑away**
+
+* **Azure**: 2024 saw **30 % YoY growth** in Azure‑related revenue, driven by consumption‑based services. Microsoft expects its next growth wave to come from scaling AI‑centric infrastructure, deeper Azure integration with its Office 365/ Microsoft 365 cloud suite, and continued cloud‑engineering investment.  
+* **Google Cloud (GCP)**: The latest disclosed figure (FY 2023) shows **$33.1 billion** in revenue, up **$6.8 billion** from the prior year. Google’s growth agenda centers on expanding **core infrastructure/platform services**, **Google Workspace**, and **AI‑focused capabilities** (Vertex AI, Duet AI).  
+
+Because the documents do not provide 2024 GCP revenue or any market‑share metrics, a precise 2024 side‑by‑side comparison of Azure vs. GCP market share cannot be made with the supplied information.

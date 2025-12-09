@@ -1,0 +1,187 @@
+[INFO] Qdrant running at http://localhost:6333
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over CSV stock data.
+
+The CSV files have headers like:
+- ticker, date, date_ts, open, high, low, close, volume, year, quarter
+
+Given a user query of:
+"Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
+
+Possible query:
+"company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison"
+
+If you are unsure of the ticker symbol of a company, guess multiple possible symbols within an "any" match.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
+You're only given two metadata keys: company and date_range
+chunk_count is the number of business days within the date range for a given company
+{
+    "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
+    "filters: [
+        {
+            "must": [
+                    {"key": "company", "match": {"value": "AAPL"}},
+                    {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                    {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+                ],
+            "chunk_count": 81,
+        },
+        {
+            "must": [
+                {"key": "company", "match": {"value": "MSFT"}},
+                {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+            ],
+            "chunk_count": 81
+        }
+    ]
+}
+Reasoning: high
+
+
+Your task:
+- Read the user's question.
+- Infer the correct tickers, date ranges, and any other needed filters.
+- You will first rewrite the user query then add it to a given valid Python dict literal.
+- Return ONLY a valid JSON object in this exact qdrant query format.
+- Do NOT include backticks, explanations, or any surrounding text. Just a valid python dictionary.
+- If the prompt does not require financial data retrieval, (e.g. questions about company strategies,
+  products, or other non-fiscal topics), return an empty query with zero chunk count:
+{
+    "query": "<optimized query text>",
+    "filters": [],
+    "chunk_count": 0
+}
+
+
+user: How does Tesla evaluate its energy segment growth and what strategies are they working on to increase its profitability?
+
+----
+Response:
+Usage: {'inputTokens': 665, 'outputTokens': 385, 'totalTokens': 1050}
+Metrics: {'latencyMs': 2748}
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over PDF financial reports such as 10-Ks, 10-Qs, and annual reports.
+
+Rewrite the user's question into a short, dense query that:
+- Mentions the company names, segments (e.g., "Google Search"), and years.
+- Targets sections like "Results of Operations", "Segment Results", "Revenue", and
+  commentary on growth, drivers, and profitability.
+- Uses phrases that are likely to appear in those reports, like
+  "year-over-year", "segment revenue", "results of operations", "management discussion".
+- Targets keywords relevant to the question and financial analysis.
+
+You may also use filters on the "company" (ticker symbol) and "year" keys if specific companies or years are mentioned.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+The company key is based of the stock ticker symbol, e.g., "AAPL" for Apple, "MSFT" for Microsoft, "GOOGL" for Google, etc.
+If you are unsure of the ticker symbol, guess multiple possible symbols.
+
+For example, given the user question, "What were key revenue figures for Amazon and Oracle in 2021.",
+a optimized query would be:
+{
+    "query": <optimized query text>,
+    "filters": [
+        {
+            "must": [
+                {"key": "year", "match": {"value": "2021"}},
+                {"key": "company", "match": {"any": ["AMZN", "ORCL"]}}
+            ]
+        }
+    ]
+}
+
+Be concise. No explanations, just the optimized query.
+
+user: How does Tesla evaluate its energy segment growth and what strategies are they working on to increase its profitability?
+
+----
+Response:
+Usage: {'inputTokens': 460, 'outputTokens': 336, 'totalTokens': 796}
+Metrics: {'latencyMs': 2625}
+[WARN] CSV query failed: Unexpected Response: 422 (Unprocessable Entity)
+Raw response content:
+b'{"status":{"error":"Validation error in JSON body: [internal.limit: value 0 invalid, must be 1 or larger]"},"time":0.0}'
+Retrieved the following docs:
+Relevant Document 0, NASDAQ_TSLA_2020.txt, chunk index 76, source_type=pdf, year=2020
+Relevant Document 1, NASDAQ_TSLA_2021.txt, chunk index 76, source_type=pdf, year=2021
+Relevant Document 2, NASDAQ_TSLA_2023.txt, chunk index 63, source_type=pdf, year=2023
+Relevant Document 3, NASDAQ_TSLA_2022.txt, chunk index 19, source_type=pdf, year=2022
+Relevant Document 4, NASDAQ_TSLA_2023.txt, chunk index 20, source_type=pdf, year=2023
+Relevant Document 5, NASDAQ_TSLA_2019.txt, chunk index 17, source_type=pdf, year=2019
+Relevant Document 6, NASDAQ_TSLA_2021.txt, chunk index 26, source_type=pdf, year=2021
+Relevant Document 7, NASDAQ_TSLA_2020.txt, chunk index 26, source_type=pdf, year=2020
+Relevant Document 8, NASDAQ_TSLA_2024.txt, chunk index 22, source_type=pdf, year=2024
+Relevant Document 9, NASDAQ_TSLA_2025.txt, chunk index 22, source_type=pdf, year=2025
+Using model: openai.gpt-oss-120b-1:0
+
+
+
+----
+Response:
+Usage: {'inputTokens': 12103, 'outputTokens': 1921, 'totalTokens': 14024}
+Metrics: {'latencyMs': 9671}
+**How Tesla evaluates the growth of its Energy Generation & Storage segment**
+
+| Document | What Tesla says about its evaluation method |
+|----------|--------------------------------------------|
+| Note 21 – Segment Reporting (2020, 2021, 2023) | “**Our CODM does not evaluate operating segments using asset or liability information.**”  The CODM (Chief Operating Decision‑maker) bases its assessment on **revenues and gross profit** (the two quantitative figures that are presented for each segment in the segment‑reporting tables).  No balance‑sheet‑based metrics (e.g., assets, liabilities, equity) are used to judge segment performance. |
+
+*Evidence*: The same wording appears in the 2020, 2021 and 2023 PDFs (see “Note 21 – Segment Reporting and Information about Geographic Areas”).
+
+Therefore, when Tesla talks about “energy‑segment growth” it looks foremost at:
+* **Revenue growth** (e.g., $1.994 bn in 2020 → $3.909 bn in 2022 → $6.035 bn in 2023 → $10.086 bn in 2024).
+* **Gross‑profit trends** (e.g., $18 m in 2020 → $288 m in 2022 → $1.141 bn in 2023 → $1.451 bn in 2024).
+
+---
+
+**What Tesla is doing to lift the profitability of the Energy segment (inferred from the provided data)**  
+
+The PDFs do not contain a dedicated “strategy” paragraph, but several actions and trends that are consistently reported point to the company’s implicit profit‑enhancement plan:
+
+| Action / Trend (from the documents) | How it supports profitability |
+|------------------------------------|------------------------------------------------------------|
+| **Rapid revenue expansion** – Energy revenue jumped from $1.994 bn (2020) to $10.086 bn (2024). | Higher top‑line sales give more room for margin improvement. |
+| **Geographic expansion** – Revenue in “Other international” grew from $4.832 bn (2018) to $29.793 bn (2023). | Diversifies market exposure, reduces reliance on any single region, and captures higher‑margin projects abroad. |
+| **Long‑lived‑asset buildup** – Assets in the United States grew from $15.989 bn (2020) to $26.629 bn (2023); new “Germany” and “China” asset lines appear in 2023/2024. | Investing in production / installation capacity (e.g., Gigafactory‑type facilities, solar‑panel factories) lowers per‑unit cost and improves gross margin. |
+| **Inventory build‑up in the segment** – Energy‑segment inventory rose from $2.487 bn (2023) to $2.487 bn (2024) and is tracked separately. | Managing inventory strategically lets Tesla meet demand without costly rush orders, protecting margins. |
+| **Restructuring & cost control** – Note 22 (2020‑2022) records restructuring charges, employee‑termination costs, and impairment of non‑core assets. | By removing under‑performing assets and workforce, Tesla trims operating expenses, which directly lifts operating margin. |
+| **Digital‑asset impairment & gains** – Note 19 (2022‑2023) shows $204 m and $101 m impairment losses but also $64 m and $128 m gains from converting digital assets to cash. | The net effect is a cash‑flow benefit that can be redeployed into the energy business (e.g., R&D, manufacturing capacity). |
+| **Product‑mix shift** – The segment’s gross‑profit margin rose from essentially **0 %** in 2020 ($18 m gross profit on $1.994 bn revenue) to **~19 %** in 2024 ($1.451 bn gross profit on $10.086 bn revenue). | Indicates more sales of higher‑margin products (e.g., Powerwall, Powerpack, Megapack, solar‑roof installations) and/or better pricing/ cost structure. |
+| **Regulatory‑credit and service revenue** – While not broken out in the energy‑segment tables, the overall “Services and other” line (which includes energy‑related services) grew from $2.306 bn (2020) to $10.534 bn (2024). | Service contracts are high‑margin, recurring‑revenue streams that bolster segment profitability. |
+
+**Key strategic levers that emerge from the data**
+
+1. **Scale‑up manufacturing and installation capacity** – evidenced by rising long‑lived‑asset balances in the U.S., Germany and China.  
+2. **Geographic diversification** – rapid growth in “Other international” revenues shows a deliberate push into new markets.  
+3. **Cost‑efficiency programs** – restructuring charges, employee termination expenses and asset impairments indicate a focus on trimming non‑core costs.  
+4. **Product‑mix optimization** – the shift from near‑zero gross profit (2020) to double‑digit gross profit (2024) suggests Tesla is selling more of the higher‑margin solar‑storage systems (Powerwall/Powerpack/Megapack) and leveraging service contracts.  
+5. **Leveraging digital‑asset cash conversions** – the net cash inflow from digital‑asset sales can be redeployed into energy‑segment R&D and capacity expansion.  
+
+---
+
+### Bottom‑line answer
+
+- **Evaluation methodology:** Tesla’s chief operating decision‑maker judges the Energy segment solely on **revenues and gross‑profit results** (no asset‑ or liability‑based metrics).  
+- **Profit‑enhancement strategies (as reflected in the disclosed numbers):**  
+  1. **Massive revenue scaling** across all geographies, especially “Other international”.  
+  2. **Investment in production and installation assets** (U.S., Germany, China) to lower unit costs.  
+  3. **Cost‑control via restructuring, employee‑termination and asset‑impairment programs**.  
+  4. **Shifting toward higher‑margin products and services** (more solar‑storage systems, service contracts).  
+  5. **Utilizing cash from digital‑asset disposals** to fund energy‑segment growth.
+
+Because the provided filings do not contain a narrative “strategy‑statement” section, the above points are drawn from the **observable trends and disclosed actions** that Tesla reports in its segment‑reporting notes and financial statements.

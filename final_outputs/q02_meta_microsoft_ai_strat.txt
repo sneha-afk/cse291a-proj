@@ -1,0 +1,174 @@
+[INFO] Qdrant running at http://localhost:6333
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over CSV stock data.
+
+The CSV files have headers like:
+- ticker, date, date_ts, open, high, low, close, volume, year, quarter
+
+Given a user query of:
+"Find the performance of Apple stock in the second quarter 2023 and compare it with Microsoft in second quarter 2023"
+
+Possible query:
+"company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison"
+
+If you are unsure of the ticker symbol of a company, guess multiple possible symbols within an "any" match.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+Here's an example of what a Qdrant query would look like that follows python dictionary formatting:
+You're only given two metadata keys: company and date_range
+chunk_count is the number of business days within the date range for a given company
+{
+    "query": "company:AAPL company:MSFT year:2023 quarter:Q2 close price performance comparison",
+    "filters: [
+        {
+            "must": [
+                    {"key": "company", "match": {"value": "AAPL"}},
+                    {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                    {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+                ],
+            "chunk_count": 81,
+        },
+        {
+            "must": [
+                {"key": "company", "match": {"value": "MSFT"}},
+                {"key": "date_range.start", "range": { "lte": "2023-06-30" }},
+                {"key": "date_range.end", "range": { "gte": "2023-04-01" }}
+            ],
+            "chunk_count": 81
+        }
+    ]
+}
+Reasoning: high
+
+
+Your task:
+- Read the user's question.
+- Infer the correct tickers, date ranges, and any other needed filters.
+- You will first rewrite the user query then add it to a given valid Python dict literal.
+- Return ONLY a valid JSON object in this exact qdrant query format.
+- Do NOT include backticks, explanations, or any surrounding text. Just a valid python dictionary.
+- If the prompt does not require financial data retrieval, (e.g. questions about company strategies,
+  products, or other non-fiscal topics), return an empty query with zero chunk count:
+{
+    "query": "<optimized query text>",
+    "filters": [],
+    "chunk_count": 0
+}
+
+
+user: How has Meta's approach to AI changed from Microsoft's within the past three years?
+
+----
+Response:
+Usage: {'inputTokens': 661, 'outputTokens': 407, 'totalTokens': 1068}
+Metrics: {'latencyMs': 3272}
+Using model: openai.gpt-oss-20b-1:0
+
+
+Input messages:
+user: 
+You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
+for better retrieval over PDF financial reports such as 10-Ks, 10-Qs, and annual reports.
+
+Rewrite the user's question into a short, dense query that:
+- Mentions the company names, segments (e.g., "Google Search"), and years.
+- Targets sections like "Results of Operations", "Segment Results", "Revenue", and
+  commentary on growth, drivers, and profitability.
+- Uses phrases that are likely to appear in those reports, like
+  "year-over-year", "segment revenue", "results of operations", "management discussion".
+- Targets keywords relevant to the question and financial analysis.
+
+You may also use filters on the "company" (ticker symbol) and "year" keys if specific companies or years are mentioned.
+When specifying one value for matches, use "match": {"value": ...}.
+When specifying multiple values for matches, use "match": {"any": [...]}.
+
+The company key is based of the stock ticker symbol, e.g., "AAPL" for Apple, "MSFT" for Microsoft, "GOOGL" for Google, etc.
+If you are unsure of the ticker symbol, guess multiple possible symbols.
+
+For example, given the user question, "What were key revenue figures for Amazon and Oracle in 2021.",
+a optimized query would be:
+{
+    "query": <optimized query text>,
+    "filters": [
+        {
+            "must": [
+                {"key": "year", "match": {"value": "2021"}},
+                {"key": "company", "match": {"any": ["AMZN", "ORCL"]}}
+            ]
+        }
+    ]
+}
+
+Be concise. No explanations, just the optimized query.
+
+user: How has Meta's approach to AI changed from Microsoft's within the past three years?
+
+----
+Response:
+Usage: {'inputTokens': 456, 'outputTokens': 510, 'totalTokens': 966}
+Metrics: {'latencyMs': 3703}
+[WARN] CSV query failed: Unexpected Response: 422 (Unprocessable Entity)
+Raw response content:
+b'{"status":{"error":"Validation error in JSON body: [internal.limit: value 0 invalid, must be 1 or larger]"},"time":0.0}'
+Retrieved the following docs:
+Relevant Document 0, NASDAQ_META_2024.txt, chunk index 0, source_type=pdf, year=2024
+Relevant Document 1, NASDAQ_MSFT_2024.txt, chunk index 19, source_type=pdf, year=2024
+Relevant Document 2, NASDAQ_META_2023.txt, chunk index 0, source_type=pdf, year=2023
+Relevant Document 3, NASDAQ_MSFT_2024.txt, chunk index 18, source_type=pdf, year=2024
+Relevant Document 4, NASDAQ_MSFT_2023.txt, chunk index 19, source_type=pdf, year=2023
+Relevant Document 5, NASDAQ_META_2023.txt, chunk index 2, source_type=pdf, year=2023
+Relevant Document 6, NASDAQ_MSFT_2024.txt, chunk index 13, source_type=pdf, year=2024
+Relevant Document 7, NASDAQ_META_2023.txt, chunk index 15, source_type=pdf, year=2023
+Relevant Document 8, NASDAQ_META_2023.txt, chunk index 56, source_type=pdf, year=2023
+Relevant Document 9, NASDAQ_META_2024.txt, chunk index 16, source_type=pdf, year=2024
+Using model: openai.gpt-oss-120b-1:0
+
+
+
+----
+Response:
+Usage: {'inputTokens': 8424, 'outputTokens': 1853, 'totalTokens': 10277}
+Metrics: {'latencyMs': 8561}
+**Meta’s AI trajectory (2021 → 2023 → 2024)**  
+
+| Year | What the filing says about AI | How the statement shows a shift |
+|------|------------------------------|--------------------------------|
+| **2023 (NAS​DAQ_META_2023)** | “We are **investing in AI initiatives**, including generative AI, to **recommend relevant content**, **enhance our advertising tools**, and **develop new products and features** using generative AI.”  The focus is largely **backend‑oriented** – ranking, discovery, ad‑tech, and product‑development efficiency. | AI is presented as a **support engine** for existing Meta products (feeds, ads, creator tools). |
+| **2024 (NAS​DAQ_META_2024)** | “We are **innovating in AI** to build new experiences… AI investments power **content‑ranking**, the **discovery engine**, **advertiser tools**, **new generative‑AI experiences**, **and the tools that make product development more efficient**.  **Meta AI** is described as **an assistant available across our apps, on Ray‑Ban Meta AI glasses and on the web**, helping people **learn, get things done, create content, and connect**.” | AI moves from a **behind‑the‑scenes** driver to a **consumer‑facing assistant** and a **key pillar of the metaverse/wearables strategy**. The language now emphasizes *assistant‑type experiences* and *hardware integration* (glasses), not just internal efficiencies. |
+
+**Microsoft’s AI trajectory (2021 → 2023 → 2024)**  
+
+| Year | What the filing says about AI | How the statement shows a shift |
+|------|------------------------------|--------------------------------|
+| **2023 (NAS​DAQ_MSFT_2023)** | “Microsoft is a technology company … **creating platforms and tools, powered by AI**, that deliver better solutions.”  The AI reference is **general**; the highlights focus on revenue growth in cloud, Office, Azure, etc., with no specific consumer‑AI product named. | AI is mentioned as a **foundational technology** but not yet tied to distinct AI‑centric products. |
+| **2024 (NAS​DAQ_MSFT_2024)** | “**Microsoft AI** – focuses on delivering **online experiences** such as **Bing, Copilot, Start/MSN**, and other advertising‑based services **and developing advanced AI models**.  **Technology & Research** focuses on **forward‑looking AI innovations** spanning infrastructure, services, and applications.” | AI is now **product‑specific** (Copilot, Bing AI) and **service‑specific** (advanced model development for cloud). The emphasis is on **AI as a cloud‑service and productivity‑tool** that powers *external* customer experiences. |
+
+**How Meta’s AI approach has *changed relative to* Microsoft’s approach over the past three years**
+
+1. **From backend optimisation to a consumer‑visible assistant**  
+   *Meta* moved from using AI mainly to improve content ranking, ad targeting, and internal product development (2023) to launching a **named AI assistant (Meta AI) that lives across apps, web, and hardware** (2024).  
+   *Microsoft* has always framed AI as a platform capability, but by 2024 it shifted to **exposing AI directly to end‑users via Copilot, Bing AI, and other consumer‑oriented experiences**. While both companies now surface AI to users, Meta’s rollout is tied to its **metaverse/wearable hardware strategy**, whereas Microsoft’s is tied to **cloud‑based productivity and search services**.
+
+2. **Integration with hardware vs. integration with cloud services**  
+   *Meta* explicitly links AI to **Ray‑Ban Meta AI glasses and other AR/VR wearables** – AI becomes a **hardware‑enabled personal assistant**.  
+   *Microsoft* emphasizes **AI models hosted in Azure and delivered through SaaS tools** (Copilot, Bing) – AI remains a **cloud‑service offering**.
+
+3. **Generative AI emphasis**  
+   Both firms highlight generative AI, but Meta’s 2024 filing stresses **“new generative‑AI experiences”** and the assistant that can help users *create* content. Microsoft’s 2024 filing mentions **“advanced AI models”** but focuses on **search, productivity, and developer tooling** rather than a consumer‑assistant that creates social content.
+
+4. **Strategic positioning**  
+   *Meta* frames AI as a **core pillar of its next‑generation “metaverse” ecosystem**, indicating a **long‑term, brand‑building ambition**.  
+   *Microsoft* frames AI as a **driver of its cloud‑and‑productivity revenue growth**, aligning AI with its **financial performance metrics** (e.g., cloud revenue up 23% in FY24).
+
+**Bottom‑line comparison**
+
+- **Meta** has **expanded AI from internal optimization (2023) to a visible, consumer‑facing assistant that is woven into its immersive hardware and social‑media products (2024)**.  
+- **Microsoft** has **evolved AI from a background enabler (2023) to a suite of market‑ready, cloud‑delivered services (Copilot, Bing AI) and a research engine for advanced models (2024)**.  
+
+Thus, over the past three years Meta’s AI approach has shifted toward **user‑level interaction and hardware integration**, while Microsoft’s AI approach has shifted toward **cloud‑centric, productivity‑focused services and large‑scale model development**. Both companies have increased AI investment, but the **direction of that investment diverges: Meta pursues AI as a consumer assistant within its metaverse ecosystem; Microsoft pursues AI as a cloud‑service and productivity engine**.
