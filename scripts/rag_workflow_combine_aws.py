@@ -63,7 +63,7 @@ def send_request(model: str, messages: list[dict], print_prompt: bool = True) ->
 def rewrite_prompt_csv(original_question: str) -> dict[str, Any]:
     sys_prompt = """
 You are an assistant that rewrites a natural language financial query into a Qdrant search query as a Python dictionary
-for better retrieval over CSV stock data.
+for better retrieval over CSV stocks/company share data.
 
 The CSV files have headers like:
 - ticker, date, date_ts, open, high, low, close, volume, year, quarter
@@ -118,7 +118,7 @@ Your task:
     "filters": [],
     "chunk_count": 0
 }
-
+Remember, questions with numerical or date references often imply a need for financial data retrieval. Be sure to include relevant filters for such queries and a non-zero chunk count.
 """
 
     messages = [
