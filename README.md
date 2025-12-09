@@ -1,5 +1,7 @@
 # cse291a
 
+## Development
+
 To install libraries using [`uv`](https://github.com/astral-sh/uv), there is a `pyproject.toml` at the root:
 
 ```bash
@@ -13,38 +15,47 @@ uv sync
 source ./.venv/bin/activate     # or ./.venv/Scripts/activate
 ```
 
-## Quickstarts
-### Running locally
+> Recommended to set encoding to UTF-8 if encountering errors related to Unicode
+> that may not render correctly when dumping into UTF-8 text files:
+> ```
+> export PYTHONIOENCODING="utf-8"
+> # or
+> $env:PYTHONIOENCODING="utf-8"
+> ```
 
-1. Start Qdrant: ensure Docker Desktop is running
+## Quickstarts
+### Setup
+1. Start Qdrant: ensure [Docker Desktop](https://docs.docker.com/get-started/introduction/get-docker-desktop/) is running
 
 To create the storage folder in the local filesystem (i.e, PWD):
 ```bash
 docker run -p 6333:6333 -p 6334:6334 -v "$(pwd)/qdrant_storage:/qdrant/storage:z" qdrant/qdrant
 ```
 
-To instead use a Docker volume (in case local storage corrupts) to persist:
+To instead use a Docker volume to run from any directory or prevent potential file corruption:
 ```bash
 docker volume create qdrant_storage
-# Removing the $(pwd) so it uses the Docker volume
+# Removing the $(pwd) from above to instead use the Docker volume
 docker run -d -p 6333:6333 -p 6334:6334 -v "qdrant_storage:/qdrant/storage:z" qdrant/qdrant
 ```
 
-2. Start [Ollama](https://ollama.com/) with `gpt-oss:20b`
-3. Generate embeddings with `embed.py` to generate embeddings: run from root of this repo
-4. Generate embeddings with `embed_csv.py` to generate embeddings: run from root of this repo
-5. Run rag with`rag_local.py` with `rag("<Question>")` or `rag_aws` for AWS run
+2. Generate embeddings for PDF documents by running `embed.py` from the root of this repo
+3. Generate embeddigns for CSV files by running `embed_csv.py` from the root of this repo
+4. Set up inference source: locally with [Ollama](https://ollama.com/) or with [AWS Bedrock](https://aws.amazon.com/bedrock/) with the [instructions below](#running-aws-bedrock)
+5. Run [`rag_workflow_combine_aws.py`](scripts/rag_workflow_combine_aws.py) from the root of this repo.
 
+> `rag_local.py` and `rag_aws.py` are legacy scripts without the most up-to-date chunking methods.
 
-To test retrieval only use `retrieval.py`
+To test Qdrant retrievals (i.e which documents or latency), run `retrieval.py`.
 
 ### Running AWS Bedrock
 See [`boto3` documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) (Python client for Bedrock).
 
-Ensure AWS CLI is installed: see [aws/README.md](./aws/README.md) for manual installation on Linux:
+Ensure AWS CLI is installed: see [aws/README.md](./aws/README.md) for manual installation on Linux, else with package managers:
 ```bash
 # Windows via winget
 winget install Amazon.AWSCLI
+scoop install aws             # or via Scoop
 ```
 
 ```bash
