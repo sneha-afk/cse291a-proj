@@ -4,19 +4,9 @@ from dotenv import load_dotenv
 import os
 from qdrant_client import QdrantClient, models
 import datetime
+from utils import setup_qdrant
 
-load_dotenv()
-QDRANT_URL = os.getenv("QDRANT_URL")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-
-collection_name = "knowledge_base"
-embedding_model_name = "BAAI/bge-small-en-v1.5"
-
-if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
-    print(QDRANT_URL)
-    qdrant_client = QdrantClient(url=QDRANT_URL)
-else:
-    qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+qdrant_client, collection_name, embedding_model_name = setup_qdrant()
 
 REGION = "us-west-2"  # don't change this
 
@@ -25,15 +15,29 @@ answer_model: str = "openai.gpt-oss-120b-1:0"
 
 bedrock_client = boto3.client("bedrock-runtime", region_name=REGION)
 
+# don't exhaustively retry
+MAX_RETRIES = 10
 
 def send_request(model: str, messages, print_prompt: bool = True) -> str:
-    response = bedrock_client.converse(
-        modelId=model,
-        messages=messages,
-        inferenceConfig={
-            "maxTokens": 16384,
-        }
-    )
+    retry_count = 0
+    while True:
+        try:
+            response = bedrock_client.converse(
+                modelId=model,
+                messages=messages,
+                inferenceConfig={
+                    "maxTokens": 16384,
+                }
+            )
+            break
+        except ClientError as e:
+            print(f"[ERROR] Bedrock request failed: {e}")
+            retry_count += 1
+            print(f"\tRetrying Bedrock request (retry count: {retry_count})")
+            if retry_count >= MAX_RETRIES:
+                print("[ERROR] Max retries reached, exiting.")
+                exit(1)
+            continue
 
     print(f"Using model: {model}\n\n")
     if print_prompt:
@@ -113,16 +117,20 @@ Your task:
     ]
 
     # run in loop, eval err if something goes wrong
+    retry_count = 0
     while True:
         try:
             qdrant_query = eval(send_request(rewriter_model, messages))
             break
-        except:
+        except Exception as e:
+            retry_count += 1
+            print(f"[ERROR][CSVAgent] Failed to parse Qdrant query: {e}")
+            print(f"\tRetrying CSVAgent (retry count: {retry_count})")
+            if retry_count >= MAX_RETRIES:
+                print("[ERROR] Max retries reached, exiting.")
+                exit(1)
             continue
 
-    # print("Generated filters:")
-    # for f in qdrant_query["filters"]:
-    #     print(f)
     return qdrant_query
 
 
