@@ -1,30 +1,9 @@
-from dotenv import load_dotenv
-import os
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as rest
+from utils import setup_qdrant
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Read Qdrant credentials
-QDRANT_URL = os.getenv("QDRANT_URL")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-
-# Initialize the Qdrant client
-# Skip API key if running locally
-if "localhost" in QDRANT_URL or "127.0.0.1" in QDRANT_URL:
-    print(QDRANT_URL)
-    client = QdrantClient(url=QDRANT_URL, timeout=60)
-else:
-    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
-
-# Name of collection on Qdrant
-collection_name = "knowledge_base"
-
-# Embedding model being used
-model_name = "BAAI/bge-small-en-v1.5"
-
-#========================================================================
+client, collection_name, embedding_model_name = setup_qdrant()
+# ========================================================================
 
 # See documentation for filters:
 # https://qdrant.tech/documentation/concepts/filtering/

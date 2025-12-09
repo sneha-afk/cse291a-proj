@@ -15,6 +15,8 @@ uv sync
 source ./.venv/bin/activate     # or ./.venv/Scripts/activate
 ```
 
+Use `qdrant_delete_by_filter.py` when deleting points in a filtered way (i.e only CSV chunks).
+
 > Recommended to set encoding to UTF-8 if encountering errors related to Unicode
 > that may not render correctly when dumping into UTF-8 text files:
 > ```
@@ -40,7 +42,7 @@ docker run -d -p 6333:6333 -p 6334:6334 -v "qdrant_storage:/qdrant/storage:z" qd
 ```
 
 2. Generate embeddings for PDF documents by running `embed.py` from the root of this repo
-3. Generate embeddigns for CSV files by running `embed_csv.py` from the root of this repo
+4. Run `preprocess_csv.py` before running `embed_csv.py`, both from the root of this repo
 4. Set up inference source: locally with [Ollama](https://ollama.com/) or with [AWS Bedrock](https://aws.amazon.com/bedrock/) with the [instructions below](#running-aws-bedrock)
 5. Run [`rag_workflow_combine_aws.py`](scripts/rag_workflow_combine_aws.py) from the root of this repo.
 
